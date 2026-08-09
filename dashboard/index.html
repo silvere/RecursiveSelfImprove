@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>RSI · 自进化系统仪表盘</title>
+<style>
+:root { --bg:#f7f7f5; --fg:#1a1a1a; --muted:#777; --card:#fff; --line:#e4e2dd; --accent:#b05730; }
+@media (prefers-color-scheme: dark) {
+  :root { --bg:#161513; --fg:#e8e6e1; --muted:#999; --card:#211f1c; --line:#38352f; --accent:#e08753; }
+}
+* { box-sizing:border-box; margin:0; }
+body { background:var(--bg); color:var(--fg); font:16px/1.65 -apple-system,"PingFang SC","Microsoft YaHei",sans-serif; max-width:880px; margin:0 auto; padding:2rem 1.2rem 4rem; }
+h1 { font-size:1.5rem; margin-bottom:.3rem; }
+h2 { font-size:1.1rem; margin:2rem 0 .8rem; border-bottom:1px solid var(--line); padding-bottom:.4rem; }
+h4 { font-size:.95rem; margin-bottom:.2rem; }
+ul { list-style:none; padding:0; }
+li { padding:.25rem 0; }
+.muted { color:var(--muted); }
+.goal { background:var(--card); border:1px solid var(--line); border-left:4px solid var(--accent); border-radius:8px; padding:1rem 1.2rem; margin-top:1rem; }
+.pill { display:inline-block; background:var(--accent); color:#fff; border-radius:99px; padding:.1rem .7rem; font-size:.8rem; margin-left:.5rem; }
+.card { background:var(--card); border:1px solid var(--line); border-radius:8px; padding:.8rem 1rem; margin:.5rem 0; }
+.card p { font-size:.88rem; color:var(--muted); }
+table { width:100%; border-collapse:collapse; font-size:.88rem; background:var(--card); border:1px solid var(--line); border-radius:8px; }
+th,td { text-align:left; padding:.5rem .7rem; border-bottom:1px solid var(--line); vertical-align:top; }
+.tablewrap { overflow-x:auto; }
+code { font-size:.82rem; color:var(--muted); }
+.stats { display:flex; gap:1rem; flex-wrap:wrap; margin:.8rem 0; }
+.stat { background:var(--card); border:1px solid var(--line); border-radius:8px; padding:.6rem 1.1rem; text-align:center; }
+.stat b { font-size:1.4rem; display:block; }
+footer { margin-top:3rem; font-size:.8rem; color:var(--muted); }
+</style>
+</head>
+<body>
+<h1>🌀 RSI · 自进化系统仪表盘</h1>
+<p class="muted">更新于 2026-08-09 22:31 ｜ 数据源：git 仓库状态文件</p>
+
+<div class="goal"><b>14 天内（截止 2026-08-23），让本框架自己的仪表盘在 rsi.jerryai.cn 上线，且数据真实。</b><span class='pill'>距截止 14 天</span></div>
+
+<h2>验收标准（0/4）</h2>
+<ul><li class='todo'>⬜ `rsi.jerryai.cn` 公网可访问</li>
+<li class='todo'>⬜ 仪表盘展示的日志、进度、审批数据与 git 仓库实际记录一致</li>
+<li class='todo'>⬜ 飞书简报连续 7 天正常送达</li>
+<li class='todo'>⬜ 至少完成一次"飞书回复 → INBOX → 下场会话执行"的介入闭环</li></ul>
+
+<h2>任务队列</h2>
+<div class="stats">
+  <div class="stat"><b>4</b>待办</div>
+  <div class="stat"><b>0</b>进行中</div>
+</div>
+<ul><li class='muted'>（无进行中任务）</li><li class='todo'>⬜ T-001 等待"启用 GitHub Pages + 转公开仓库"审批（A-001/A-002）通过后，启用 Pages 并验证 rsi.jerryai.cn 可访问 ｜curl 返回 200</li>
+<li class='todo'>⬜ T-002 完善仪表盘：验收标准自动打勾（从 GOAL.md 与实际数据比对）｜仪表盘勾选状态与事实一致</li>
+<li class='todo'>⬜ T-003 演练介入闭环：请人在飞书回复一条指令，验证其落入 INBOX 并在下场会话被执行 ｜journal 中有对应执行记录</li>
+<li class='todo'>⬜ T-004 简报送达计数器：在 LEDGER 中记录连续送达天数 ｜LEDGER 有逐日记录</li></ul>
+
+<h2>待审批</h2>
+<div class="tablewrap"><table>
+<tr><th>ID</th><th>动作</th><th>理由</th><th>状态</th></tr>
+<tr><td>A-001</td><td>将本仓库 github.com/silvere/RecursiveSelfImprove 转为 public</td><td>GitHub Pages 免费版要求公开仓库；仓库内容为系统状态文件，无密钥（已 .gitignore 日志）</td><td>🟡 pending</td></tr>
+<tr><td>A-002</td><td>启用 GitHub Pages（分支 main，目录 /dashboard）并在 Cloudflare 给 jerryai.cn 添加 CNAME 记录 rsi → silvere.github.io</td><td>达成 GOAL 验收标准第 1 条：rsi.jerryai.cn 公网可访问</td><td>🟡 pending</td></tr>
+</table></div>
+
+<h2>最近日志</h2>
+<p class='muted'>（尚无日志）</p>
+
+<h2>复盘账本（最新）</h2>
+<ul><li>[L-001] 2026-08-09 ｜打法 ｜macOS 自动化脚本不可假设 GNU 工具存在（无 timeout/flock），须用 perl alarm 与 mkdir 锁替代 ｜system/run.sh 实现</li></ul>
+
+<h2>Git 活动</h2>
+<ul><li><code>85f9bf1 feat: 三份会话协议（早场/晚场/周审）</code></li>
+<li><code>903831a feat: 仓库骨架与初始状态文件</code></li>
+<li><code>0256d9e docs: RSI v1 实现计划</code></li>
+<li><code>43c72d4 docs: RSI 自进化系统 v1 设计文档</code></li></ul>
+
+<footer>RSI · RecursiveSelfImprove ｜ 心智外置于 git，此页由 system/gen_dashboard.py 生成</footer>
+</body>
+</html>
