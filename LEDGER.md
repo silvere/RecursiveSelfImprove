@@ -1,0 +1,19 @@
+---
+title: "LEDGER — 复盘账本（系统可自改）"
+date: 2026-08-09
+draft: false
+tags: [rsi, ledger]
+summary: "跨天累积的教训、规律与可复用打法。"
+---
+
+# 复盘账本
+
+> 只增不删。每条格式：`[L-NNN] 日期 ｜类别(错误/规律/打法) ｜内容 ｜证据`。周审结论也写入此处，前缀 [W-NNN]。
+
+## 条目
+
+[L-001] 2026-08-09 ｜打法 ｜macOS 自动化脚本不可假设 GNU 工具存在（无 timeout/flock），须用 perl alarm 与 mkdir 锁替代 ｜system/run.sh 实现
+
+## 简报送达记录
+
+（格式：日期 ｜成功/失败 ｜备注）
