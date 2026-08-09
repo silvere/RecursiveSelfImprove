@@ -33,15 +33,15 @@ footer { margin-top:3rem; font-size:.8rem; color:var(--muted); }
 </head>
 <body>
 <h1>🌀 RSI · 自进化系统仪表盘</h1>
-<p class="muted">更新于 2026-08-09 22:36 ｜ 数据源：git 仓库状态文件</p>
+<p class="muted">更新于 2026-08-10 07:33 ｜ 数据源：git 仓库状态文件</p>
 
-<div class="goal"><b>14 天内（截止 2026-08-23），让本框架自己的仪表盘在 rsi.jerryai.cn 上线，且数据真实。</b><span class='pill'>距截止 14 天</span></div>
+<div class="goal"><b>14 天内（截止 2026-08-23），让本框架自己的仪表盘在 rsi.jerryai.cn 上线，且数据真实。</b><span class='pill'>距截止 13 天</span></div>
 
-<h2>验收标准（0/4）</h2>
-<ul><li class='todo'>⬜ `rsi.jerryai.cn` 公网可访问</li>
-<li class='todo'>⬜ 仪表盘展示的日志、进度、审批数据与 git 仓库实际记录一致</li>
-<li class='todo'>⬜ 飞书简报连续 7 天正常送达</li>
-<li class='todo'>⬜ 至少完成一次"飞书回复 → INBOX → 下场会话执行"的介入闭环</li></ul>
+<h2>验收标准（自动判定 0/4）</h2>
+<ul><li class='todo'>⬜ `rsi.jerryai.cn` 公网可访问<br><small class='muted'>判定依据：探测失败：&lt;urlopen error [Errno 8] nodename nor servname provided, or not known&gt;</small></li>
+<li class='todo'>⬜ 仪表盘展示的日志、进度、审批数据与 git 仓库实际记录一致<br><small class='muted'>判定依据：依赖标准 1</small></li>
+<li class='todo'>⬜ 飞书简报连续 7 天正常送达<br><small class='muted'>判定依据：连续送达 1 天（最近成功 2026-08-09）</small></li>
+<li class='todo'>⬜ 至少完成一次"飞书回复 → INBOX → 下场会话执行"的介入闭环<br><small class='muted'>判定依据：INBOX 已处理指令 0 条</small></li></ul>
 
 <h2>任务队列</h2>
 <div class="stats">
@@ -67,7 +67,9 @@ footer { margin-top:3rem; font-size:.8rem; color:var(--muted); }
 <ul><li>[L-001] 2026-08-09 ｜打法 ｜macOS 自动化脚本不可假设 GNU 工具存在（无 timeout/flock），须用 perl alarm 与 mkdir 锁替代 ｜system/run.sh 实现</li></ul>
 
 <h2>Git 活动</h2>
-<ul><li><code>d84e6db feat: launchd 定时任务配置</code></li>
+<ul><li><code>6941c5b chore: 建设期错误日志</code></li>
+<li><code>7af270d pm: 系统诞生日——全链路建成并通过验证</code></li>
+<li><code>d84e6db feat: launchd 定时任务配置</code></li>
 <li><code>c5d99e1 feat: 运行时脚本（锁/超时/告警/smoke）</code></li>
 <li><code>a9e1634 feat: 仪表盘生成器与 CNAME</code></li>
 <li><code>85f9bf1 feat: 三份会话协议（早场/晚场/周审）</code></li>

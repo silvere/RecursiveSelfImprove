@@ -3,7 +3,8 @@
 import html
 import re
 import subprocess
-from datetime import date, datetime
+import urllib.request
+from datetime import date, datetime, timedelta
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -94,6 +95,87 @@ def ledger_items(text, limit=8):
     return "\n".join(f"<li>{esc(e.strip())}</li>" for e in entries)
 
 
+def http_check(url, timeout=6):
+    """返回 (status_code, body) 或 (None, 错误描述)。"""
+    try:
+        req = urllib.request.Request(url, headers={"User-Agent": "rsi-dashboard/1.0"})
+        with urllib.request.urlopen(req, timeout=timeout) as r:
+            return r.status, r.read().decode("utf-8", "replace")
+    except Exception as e:
+        return None, str(e)
+
+
+def delivery_streak(ledger_text):
+    """从 LEDGER 送达记录算连续送达天数。返回 (streak, 最近成功日期或 None)。
+
+    只认原始行 `YYYY-MM-DD ｜成功/失败`，连续天数由此推导——
+    晚场会话只追加原始行，不做算术。
+    """
+    recs = {}
+    for line in ledger_text.splitlines():
+        m = re.match(r"(\d{4}-\d{2}-\d{2})\s*｜\s*(成功|失败)", line.strip())
+        if m:
+            recs[date.fromisoformat(m.group(1))] = m.group(2) == "成功"
+    if not recs:
+        return 0, None
+    last = max(recs)
+    if not recs[last]:
+        return 0, None
+    streak, d = 0, last
+    while recs.get(d):
+        streak += 1
+        d -= timedelta(days=1)
+    return streak, last
+
+
+def acceptance_auto(acceptance, ledger, inbox):
+    """对 GOAL 验收标准逐条自动判定，返回 [(ok, 标准文本, 证据)]。
+
+    GOAL.md 只读，其勾选框由人维护；此处判定一律来自实测数据。
+    """
+    results = []
+    status, body = http_check("https://rsi.jerryai.cn")
+    c1 = status == 200
+    c1_ev = f"HTTP {status}" if status else f"探测失败：{body[:80]}"
+
+    # C2 代理指标：远端可访问且页面时间戳 48h 内（数据一致性由"构建即从
+    # 仓库状态文件生成"保证，这里可验证的是远端确为新鲜构建产物）
+    c2, c2_ev = False, "依赖标准 1"
+    if c1:
+        m = re.search(r"更新于 (\d{4}-\d{2}-\d{2} \d{2}:\d{2})", body)
+        if m:
+            age = datetime.now() - datetime.strptime(m.group(1), "%Y-%m-%d %H:%M")
+            c2 = age <= timedelta(hours=48)
+            c2_ev = f"远端页面构建于 {m.group(1)}" + ("" if c2 else "（超过 48h，数据陈旧）")
+        else:
+            c2_ev = "远端页面无法解析构建时间戳"
+
+    streak, last = delivery_streak(ledger)
+    c3 = streak >= 7
+    c3_ev = f"连续送达 {streak} 天（最近成功 {last}）" if last else "尚无成功送达记录"
+
+    done_cnt = sum(1 for done, _ in checklist(inbox, "已处理") if done)
+    c4 = done_cnt >= 1
+    c4_ev = f"INBOX 已处理指令 {done_cnt} 条"
+
+    for i, (ok, ev) in enumerate([(c1, c1_ev), (c2, c2_ev), (c3, c3_ev), (c4, c4_ev)]):
+        text = acceptance[i][1] if i < len(acceptance) else f"标准 {i + 1}"
+        results.append((ok, text, ev))
+    return results
+
+
+def acceptance_li(results):
+    out = []
+    for ok, text, ev in results:
+        cls = "done" if ok else "todo"
+        mark = "✅" if ok else "⬜"
+        out.append(
+            f"<li class='{cls}'>{mark} {esc(text)}"
+            f"<br><small class='muted'>判定依据：{esc(ev)}</small></li>"
+        )
+    return "\n".join(out)
+
+
 def git_log():
     try:
         out = subprocess.run(
@@ -112,6 +194,7 @@ def main():
     plan = read("PLAN.md")
     ledger = read("LEDGER.md")
     approvals = read("human/APPROVALS.md")
+    inbox = read("human/INBOX.md")
 
     goal_m = re.search(r"\*\*(.+?)\*\*", strip_frontmatter(goal))
     goal_line = goal_m.group(1) if goal_m else "（未设定目标）"
@@ -122,7 +205,8 @@ def main():
         countdown = f"<span class='pill'>距截止 {days} 天</span>"
 
     acceptance = checklist(goal, "验收标准")
-    acc_done = sum(1 for d, _ in acceptance if d)
+    acc_auto = acceptance_auto(acceptance, ledger, inbox)
+    acc_done = sum(1 for ok, _, _ in acc_auto if ok)
     todo = checklist(plan, "待办")
     doing = checklist(plan, "进行中")
 
@@ -166,8 +250,8 @@ footer {{ margin-top:3rem; font-size:.8rem; color:var(--muted); }}
 
 <div class="goal"><b>{esc(goal_line)}</b>{countdown}</div>
 
-<h2>验收标准（{acc_done}/{len(acceptance)}）</h2>
-<ul>{li(acceptance)}</ul>
+<h2>验收标准（自动判定 {acc_done}/{len(acc_auto)}）</h2>
+<ul>{acceptance_li(acc_auto)}</ul>
 
 <h2>任务队列</h2>
 <div class="stats">
