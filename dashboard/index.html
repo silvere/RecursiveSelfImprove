@@ -33,7 +33,7 @@ footer { margin-top:3rem; font-size:.8rem; color:var(--muted); }
 </head>
 <body>
 <h1>🌀 RSI · 自进化系统仪表盘</h1>
-<p class="muted">更新于 2026-08-09 22:31 ｜ 数据源：git 仓库状态文件</p>
+<p class="muted">更新于 2026-08-09 22:36 ｜ 数据源：git 仓库状态文件</p>
 
 <div class="goal"><b>14 天内（截止 2026-08-23），让本框架自己的仪表盘在 rsi.jerryai.cn 上线，且数据真实。</b><span class='pill'>距截止 14 天</span></div>
 
@@ -61,13 +61,16 @@ footer { margin-top:3rem; font-size:.8rem; color:var(--muted); }
 </table></div>
 
 <h2>最近日志</h2>
-<p class='muted'>（尚无日志）</p>
+<div class='card'><h4>2026-08-09-pm</h4><p>系统建成：骨架、三份会话协议、运行时、launchd 定时、仪表盘、飞书链路全部就位并通过验证。</p></div>
 
 <h2>复盘账本（最新）</h2>
 <ul><li>[L-001] 2026-08-09 ｜打法 ｜macOS 自动化脚本不可假设 GNU 工具存在（无 timeout/flock），须用 perl alarm 与 mkdir 锁替代 ｜system/run.sh 实现</li></ul>
 
 <h2>Git 活动</h2>
-<ul><li><code>85f9bf1 feat: 三份会话协议（早场/晚场/周审）</code></li>
+<ul><li><code>d84e6db feat: launchd 定时任务配置</code></li>
+<li><code>c5d99e1 feat: 运行时脚本（锁/超时/告警/smoke）</code></li>
+<li><code>a9e1634 feat: 仪表盘生成器与 CNAME</code></li>
+<li><code>85f9bf1 feat: 三份会话协议（早场/晚场/周审）</code></li>
 <li><code>903831a feat: 仓库骨架与初始状态文件</code></li>
 <li><code>0256d9e docs: RSI v1 实现计划</code></li>
 <li><code>43c72d4 docs: RSI 自进化系统 v1 设计文档</code></li></ul>
