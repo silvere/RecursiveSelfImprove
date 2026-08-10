@@ -96,12 +96,28 @@ def ledger_items(text, limit=8):
 
 
 def http_check(url, timeout=6):
-    """返回 (status_code, body) 或 (None, 错误描述)。"""
+    """返回 (status_code, body) 或 (None, 错误描述)。
+
+    先走 urllib（系统解析器）；失败则经 curl + DoH 独立探测——
+    本机解析层不可信（Astrill VPN DNS 代理 198.19.255.254 会缓存陈旧 NXDOMAIN），
+    站点是否可用必须以公网视角为准。
+    """
     try:
         req = urllib.request.Request(url, headers={"User-Agent": "rsi-dashboard/1.0"})
         with urllib.request.urlopen(req, timeout=timeout) as r:
             return r.status, r.read().decode("utf-8", "replace")
     except Exception as e:
+        try:
+            p = subprocess.run(
+                ["curl", "-s", "--doh-url", "https://1.1.1.1/dns-query",
+                 "--max-time", str(timeout + 4), "-w", "\n%{http_code}", url],
+                capture_output=True, text=True, timeout=timeout + 8,
+            )
+            body, _, code = p.stdout.rpartition("\n")
+            if code.isdigit() and int(code) > 0:
+                return int(code), body
+        except Exception:
+            pass
         return None, str(e)
 
 
