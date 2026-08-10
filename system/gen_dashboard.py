@@ -221,8 +221,10 @@ def main():
         countdown = f"<span class='pill'>距截止 {days} 天</span>"
 
     acceptance = checklist(goal, "验收标准")
-    acc_auto = acceptance_auto(acceptance, ledger, inbox)
-    acc_done = sum(1 for ok, _, _ in acc_auto if ok)
+    # 2026-08-10 目标切换 v2：v1 的 acceptance_auto() 判定逻辑不再适用，
+    # 待系统按新验收标准重建（见 INBOX 指令）前，按 GOAL 勾选框如实显示
+    acc_auto = None
+    acc_done = sum(1 for done, _ in acceptance if done)
     todo = checklist(plan, "待办")
     doing = checklist(plan, "进行中")
 
@@ -266,8 +268,9 @@ footer {{ margin-top:3rem; font-size:.8rem; color:var(--muted); }}
 
 <div class="goal"><b>{esc(goal_line)}</b>{countdown}</div>
 
-<h2>验收标准（自动判定 {acc_done}/{len(acc_auto)}）</h2>
-<ul>{acceptance_li(acc_auto)}</ul>
+<h2>验收标准（{acc_done}/{len(acceptance)}）</h2>
+<p class="muted">目标已于 2026-08-10 切换为 v2（内容流水线）；自动判定逻辑重建中，暂按 GOAL.md 勾选框显示。</p>
+<ul>{li(acceptance)}</ul>
 
 <h2>任务队列</h2>
 <div class="stats">
