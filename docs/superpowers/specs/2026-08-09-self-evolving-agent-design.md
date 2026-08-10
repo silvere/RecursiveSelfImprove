@@ -84,7 +84,7 @@ RecursiveSelfImprove/
   2. 直接编辑 `INBOX.md` 或任何文件；
   3. 随时打开 Claude Code 交互会话讨论，结论写回文件。
 - **审批协议**：`APPROVALS.md` 每项含 `ID / 动作描述 / 理由 / 状态(pending|approved|rejected)`。人在飞书回复"批准 #N"或直接改状态字段；系统只执行 `approved` 项，执行后标记 `done` 并在 journal 留痕。
-- **仪表盘**：静态 HTML（无构建依赖），展示目标进度、指标曲线、最近日志、待审批项、LEDGER 摘要。发布到 `rsi.jerryai.cn`，采用 GitHub Pages + CNAME：纯静态、push 即发布，Mac 休眠不影响公网可访问性（Cloudflare tunnel 依赖本机在线，会破坏第 6 节验收标准第 1 条，故不选）。
+- **仪表盘**：静态 HTML（无构建依赖），展示目标进度、指标曲线、最近日志、待审批项、LEDGER 摘要。发布到 `rsi.jerryai.cn`。~~原定 GitHub Pages~~ **2026-08-10 经人指示改为 named tunnel**（本机是 7×24 Mac mini 服务器，tunnel 是 jerryai.cn 全站 16 个子域的标准作业；原"Mac 休眠"顾虑不成立）：launchd `cn.jerryai.rsi-dashboard` 在 127.0.0.1:8906 起静态服务，tunnel ingress 转发，GitHub Pages 降级为备用镜像。
 
 ## 4. 可靠性与停机
 
