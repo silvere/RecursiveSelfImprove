@@ -33,44 +33,55 @@ footer { margin-top:3rem; font-size:.8rem; color:var(--muted); }
 </head>
 <body>
 <h1>🌀 RSI · 自进化系统仪表盘</h1>
-<p class="muted">更新于 2026-08-10 13:31 ｜ 数据源：git 仓库状态文件</p>
+<p class="muted">更新于 2026-08-10 21:36 ｜ 数据源：git 仓库状态文件</p>
 
 <div class="goal"><b>30 天内（截止 2026-09-09），建成"每日选题 → 成稿 → 微信公众号草稿箱"的自动流水线：每天产出 1 篇通过七刀审稿的深度文章并同步到公众号草稿箱；持续迭代流水线，让选题和文章质量越来越好。</b><span class='pill'>距截止 30 天</span></div>
 
 <h2>验收标准（0/4）</h2>
-<p class="muted">目标已于 2026-08-10 切换为 v2（内容流水线）；自动判定逻辑重建中，暂按 GOAL.md 勾选框显示。</p>
-<ul><li class='todo'>⬜ **连续性**：截止日前，流水线连续 14 天每天有 1 篇通过 aiwriter2 七刀审稿的深度文章成功进入公众号草稿箱（以 wechat-sync 同步结果为证据，逐篇记录）</li>
-<li class='todo'>⬜ **可溯源**：每篇文章有选题依据与审稿记录（选题来源、论点竞技场结论、七刀修改痕迹），任一篇可从成稿回溯到选题</li>
-<li class='todo'>⬜ **迭代闭环**：复盘账本沉淀 ≥8 条关于选题/质量的具体教训，且每条能指出对应的流水线调整（prompt、流程或标准的变更证据）</li>
-<li class='todo'>⬜ **数据回流**：建成已发布文章的阅读数据记录通道；若技术上确实不可行，须给出经过验证的替代方案（如代理指标）并说明依据</li></ul>
+<p class="muted">GOAL v2（内容流水线）·自动判定，事实源为 LEDGER 文章产出记录与仓库文件，非人工勾选。</p>
+<ul><li class='todo'>⬜ **连续性**：截止日前，流水线连续 14 天每天有 1 篇通过 aiwriter2 七刀审稿的深度文章成功进入公众号草稿箱（以 wechat-sync 同步结果为证据，逐篇记录）<br><small class='muted'>判定依据：尚无成功进入草稿箱的文章</small></li>
+<li class='todo'>⬜ **可溯源**：每篇文章有选题依据与审稿记录（选题来源、论点竞技场结论、七刀修改痕迹），任一篇可从成稿回溯到选题<br><small class='muted'>判定依据：无文章可查</small></li>
+<li class='todo'>⬜ **迭代闭环**：复盘账本沉淀 ≥8 条关于选题/质量的具体教训，且每条能指出对应的流水线调整（prompt、流程或标准的变更证据）<br><small class='muted'>判定依据：选题/质量教训且带流水线调整证据 0/8 条</small></li>
+<li class='todo'>⬜ **数据回流**：建成已发布文章的阅读数据记录通道；若技术上确实不可行，须给出经过验证的替代方案（如代理指标）并说明依据<br><small class='muted'>判定依据：既无阅读数据文件，也无 docs/data-return-feasibility.md 结论（PLAN T-014，截止 2026-08-16）</small></li></ul>
 
 <h2>任务队列</h2>
 <div class="stats">
-  <div class="stat"><b>1</b>待办</div>
+  <div class="stat"><b>6</b>待办</div>
   <div class="stat"><b>0</b>进行中</div>
 </div>
-<ul><li class='muted'>（无进行中任务）</li><li class='todo'>⬜ T-003 演练介入闭环：请人在飞书回复一条指令，验证其落入 INBOX 并在下场会话被执行 ｜journal 中有对应执行记录 ｜堵点：需人配合，等飞书回复自然触发</li></ul>
+<ul><li class='muted'>（无进行中任务）</li><li class='todo'>⬜ T-010 **端到端跑通 1 篇**（不求质量，求全程有证据）：手动选一个题 → aiwriter2 出稿 → 转成 AIWriter/posts 结构 → wechat-sync 同步 → 拿到 media_id ｜验收：LEDGER"文章产出记录"出现第一行且 media_id 非空 ｜排期 2026-08-11 早场</li>
+<li class='todo'>⬜ T-011 **写转换桥 `system/pipeline/to_posts.py`**：把 aiwriter2 产物（markdown + 配图）转成 wechat-sync 认的 `posts/YYYY-MM-DD/&lt;slug&gt;/article.html` + 元数据 ｜验收：对已有的 `AIWriter2/articles/2026-08-08-hobby` 跑一次，产物通过 wechat-sync Step 3 状态检查 ｜依赖 T-010 暴露的实际格式差异</li>
+<li class='todo'>⬜ T-012 **选题入口接 wtqn**：每日从 wtqn 问题库取 3 条候选，落地为 `workspace/topics/YYYY-MM-DD.md`（含来源链接），供当日成稿选用 ｜验收：连续 2 天有候选文件且每条可回溯到 wtqn 原始条目（服务 GOAL 验收第 2 条"可溯源"）</li>
+<li class='todo'>⬜ T-013 **一键化 `system/pipeline/run_daily.sh`**：把 T-010 的手工步骤串成一条命令，失败即中止并报错到简报 ｜验收：连跑 2 天，会话只需执行一条命令 + 人工审校</li>
+<li class='todo'>⬜ T-014 **数据回流可行性结论**（GOAL 验收第 4 条，人指定第一周内出结论，截止 2026-08-16）：查明公众号已发布文章阅读数能否经 API/后台导出/代理指标取得，写 `docs/data-return-feasibility.md` ｜验收：文档给出"可行（附取数命令实测输出）"或"不可行（附被拒证据）+ 经验证的代理指标方案"</li>
+<li class='todo'>⬜ T-015 **七刀审稿记录归档规范**：定义每篇文章的审稿痕迹存放路径与最小字段（选题来源／论点竞技场结论／七刀修改），使 GOAL 验收第 2 条可机器检查 ｜验收：gen_dashboard 的 C2 判定能读到该路径并给出可溯源篇数</li></ul>
 
 <h2>待审批</h2>
 <div class="tablewrap"><table>
 <tr><th>ID</th><th>动作</th><th>理由</th><th>状态</th></tr>
 <tr><td>A-001</td><td>将本仓库 github.com/silvere/RecursiveSelfImprove 转为 public</td><td>GitHub Pages 免费版要求公开仓库；仓库内容为系统状态文件，无密钥（已 .gitignore 日志）</td><td> done（2026-08-10 批准并执行，`gh repo view` 返回 PUBLIC）</td></tr>
+<tr><td>A-003</td><td>修改 system/prompts/morning.md：把"自进化方法论调研"固化为早场固定环节（精确 diff 见下方 A-003 附录）</td><td>人 2026-08-10 13:38 飞书指令"每天上午 8 点调研行业递归自我进化方法论并直接应用"。这是常设指令，写进 PLAN 会被当成一次性任务做完就消失，只有写进早场协议才真正常设。协议属法律层，故走审批</td><td>🟡 pending</td></tr>
 <tr><td>A-002</td><td>让 rsi.jerryai.cn 公网可访问。执行机制经人指示改为本宅标准作业：named tunnel ingress（127.0.0.1:8906 静态服务）+ `cloudflared tunnel route dns` 建 CNAME，GitHub Pages 降级为备用镜像（silvere.github.io/RecursiveSelfImprove）</td><td>达成 GOAL 验收标准第 1 条</td><td> done（2026-08-10 上线，DoH 独立验证 HTTP 200；操作手册已沉淀至 Claude 记忆库 cf-jerryai-subdomain-playbook）</td></tr>
 </table></div>
 
 <h2>最近日志</h2>
+<div class='card'><h4>2026-08-10-pm</h4><p>目标切换 v2 当日：清空 INBOX（常设指令路由为 A-003 提案）、PLAN 全量重排为流水线任务、仪表盘验收判定按 v2 重建，实测 0/4 如实。</p></div>
 <div class='card'><h4>2026-08-10-am</h4><p>首场自主早场：完成 T-002（验收标准自动判定）与 T-004（送达计数器代码化），T-001/T-003 仍被外部依赖阻塞。</p></div>
 <div class='card'><h4>2026-08-09-pm</h4><p>系统建成：骨架、三份会话协议、运行时、launchd 定时、仪表盘、飞书链路全部就位并通过验证。</p></div>
 
 <h2>复盘账本（最新）</h2>
-<ul><li>[L-003] 2026-08-10 ｜打法 ｜仪表盘经 named tunnel 上线（launchd cn.jerryai.rsi-dashboard 在 127.0.0.1:8906 起 http.server 服务 dashboard/，tunnel ingress 转发）——dashboard/ 是实时服务目录，gen_dashboard.py 一跑完线上即更新，无需等 push；jerryai.cn 加子域的完整手册在 Claude 记忆库 cf-jerryai-subdomain-playbook ｜https://rsi.jerryai.cn HTTP 200</li>
+<ul><li>[L-007] 2026-08-10 ｜打法 ｜验收判定必须防自欺：v2 的"可溯源"判定不只检查审稿记录字段非空，还检查该路径在磁盘上真实存在（`article_records()` + `acceptance_auto()` C2）。仅检查非空的话，会话写一个不存在的路径就能把标准点亮 ｜证据：system/gen_dashboard.py；构造用例中"标题A"填了 workspace/reviews/a.md（不存在）→ 判定 0/2 可溯源</li>
+<li>[L-006] 2026-08-10 ｜错误 ｜v2 流水线的第一个断点在两个仓库之间：aiwriter2 产物落在 `AIWriter2/articles/&lt;slug&gt;/`，而 wechat-sync 只扫 `AIWriter/posts/YYYY-MM-DD/&lt;slug&gt;/article.html`（其 Step 2 的 find 命令写死此路径）。此前"复用既有资产即可打通"的默认假设不成立，必须写转换桥 ｜证据：`~/.claude/commands/wechat-sync.md` Step 2；`ls AIWriter2/articles/` → 2026-07-12-ai-learning 等目录 ｜→ 调整：PLAN 新增 T-011（system/pipeline/to_posts.py），且 T-010 改为"先手工端到端跑通 1 篇暴露真实格式差异"，不先写代码</li>
+<li>[L-003] 2026-08-10 ｜打法 ｜仪表盘经 named tunnel 上线（launchd cn.jerryai.rsi-dashboard 在 127.0.0.1:8906 起 http.server 服务 dashboard/，tunnel ingress 转发）——dashboard/ 是实时服务目录，gen_dashboard.py 一跑完线上即更新，无需等 push；jerryai.cn 加子域的完整手册在 Claude 记忆库 cf-jerryai-subdomain-playbook ｜https://rsi.jerryai.cn HTTP 200</li>
 <li>[L-004] 2026-08-10 ｜错误→打法 ｜本机 DNS 解析层不可信：Astrill VPN 代理（198.19.255.254）会长期缓存陈旧 NXDOMAIN，导致新上线域名在本机 curl exit 6 但公网正常。凡判定"站点是否可访问"必须以公网视角为准——http_check() 已内置 curl --doh-url https://1.1.1.1/dns-query 兜底 ｜system/gen_dashboard.py http_check()</li>
 <li>[L-005] 2026-08-10 ｜打法 ｜人的指令入口从"手改文件"升级为"飞书直接发消息"：run.sh 每场会话前调 system/pull_inbox.py 拉取 P2P 新消息写入 INBOX（message_id 去重、首跑只建检查点不回灌历史）。人只需在飞书对机器人说话 ｜system/pull_inbox.py</li>
 <li>[L-002] 2026-08-10 ｜打法 ｜累积指标（连续送达天数）只记原始事实行，派生数字由代码计算——晚场追加"日期｜成功/失败｜备注"即可，天数由 gen_dashboard.py delivery_streak() 推导，杜绝会话手算漂移 ｜system/gen_dashboard.py + 6 组边界用例通过</li>
 <li>[L-001] 2026-08-09 ｜打法 ｜macOS 自动化脚本不可假设 GNU 工具存在（无 timeout/flock），须用 perl alarm 与 mkdir 锁替代 ｜system/run.sh 实现</li></ul>
 
 <h2>Git 活动</h2>
-<ul><li><code>0598cbc feat: 飞书实时收信长连接（inbox_listener + launchd 常驻），收到即回执</code></li>
+<ul><li><code>f3eaa2f chore: 常设指令路由说明——自进化调研入早场协议走审批，政策层免请示</code></li>
+<li><code>b16b649 feat: GOAL v2 生效——内容流水线（人于 2026-08-10 批准）；仪表盘判定过渡显示</code></li>
+<li><code>0598cbc feat: 飞书实时收信长连接（inbox_listener + launchd 常驻），收到即回执</code></li>
 <li><code>afd0654 feat: 飞书收信——对机器人说话即填 INBOX（pull_inbox.py + run.sh 前置收取）</code></li>
 <li><code>e71ecff fix: http_check DoH 兜底——本机 VPN DNS 不可信，站点判定以公网视角为准</code></li>
 <li><code>d2cb1e7 feat: rsi.jerryai.cn 经 tunnel 上线；A-001/A-002 done；spec 托管决策修订</code></li>
@@ -82,9 +93,7 @@ footer { margin-top:3rem; font-size:.8rem; color:var(--muted); }
 <li><code>d84e6db feat: launchd 定时任务配置</code></li>
 <li><code>c5d99e1 feat: 运行时脚本（锁/超时/告警/smoke）</code></li>
 <li><code>a9e1634 feat: 仪表盘生成器与 CNAME</code></li>
-<li><code>85f9bf1 feat: 三份会话协议（早场/晚场/周审）</code></li>
-<li><code>903831a feat: 仓库骨架与初始状态文件</code></li>
-<li><code>0256d9e docs: RSI v1 实现计划</code></li></ul>
+<li><code>85f9bf1 feat: 三份会话协议（早场/晚场/周审）</code></li></ul>
 
 <footer>RSI · RecursiveSelfImprove ｜ 心智外置于 git，此页由 system/gen_dashboard.py 生成</footer>
 </body>

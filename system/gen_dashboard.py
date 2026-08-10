@@ -121,6 +121,13 @@ def http_check(url, timeout=6):
         return None, str(e)
 
 
+def section(text, title):
+    """取出 `## <title>` 到下一个 `## ` 之间的正文。找不到返回空串。"""
+    m = re.search(rf"^##\s*{re.escape(title)}\s*$(.*?)(?=^##\s|\Z)",
+                  text, re.M | re.S)
+    return m.group(1) if m else ""
+
+
 def delivery_streak(ledger_text):
     """从 LEDGER 送达记录算连续送达天数。返回 (streak, 最近成功日期或 None)。
 
@@ -128,7 +135,7 @@ def delivery_streak(ledger_text):
     晚场会话只追加原始行，不做算术。
     """
     recs = {}
-    for line in ledger_text.splitlines():
+    for line in section(ledger_text, "简报送达记录").splitlines():
         m = re.match(r"(\d{4}-\d{2}-\d{2})\s*｜\s*(成功|失败)", line.strip())
         if m:
             recs[date.fromisoformat(m.group(1))] = m.group(2) == "成功"
@@ -144,35 +151,80 @@ def delivery_streak(ledger_text):
     return streak, last
 
 
+def article_records(ledger_text):
+    """解析 LEDGER"文章产出记录"段的原始行。
+
+    格式：`日期 ｜标题 ｜选题来源 ｜审稿记录 ｜草稿箱：成功/失败 + media_id 或原因`
+    返回 [{date, title, source, review, ok}]，按日期升序。
+    """
+    recs = []
+    for line in section(ledger_text, "文章产出记录").splitlines():
+        parts = [p.strip() for p in line.strip().split("｜")]
+        if len(parts) < 5 or not re.fullmatch(r"\d{4}-\d{2}-\d{2}", parts[0]):
+            continue
+        recs.append({
+            "date": date.fromisoformat(parts[0]),
+            "title": parts[1],
+            "source": parts[2],
+            "review": parts[3],
+            "ok": "成功" in parts[4],
+        })
+    return sorted(recs, key=lambda r: r["date"])
+
+
 def acceptance_auto(acceptance, ledger, inbox):
-    """对 GOAL 验收标准逐条自动判定，返回 [(ok, 标准文本, 证据)]。
+    """对 GOAL v2（内容流水线）验收标准逐条自动判定，返回 [(ok, 标准文本, 证据)]。
 
     GOAL.md 只读，其勾选框由人维护；此处判定一律来自实测数据。
+    判定的唯一事实源是 LEDGER 的"文章产出记录"段（原始行）与仓库文件存在性——
+    会话不得手写派生数字（见 L-002）。
     """
     results = []
-    status, body = http_check("https://rsi.jerryai.cn")
-    c1 = status == 200
-    c1_ev = f"HTTP {status}" if status else f"探测失败：{body[:80]}"
+    recs = article_records(ledger)
+    ok_recs = [r for r in recs if r["ok"]]
 
-    # C2 代理指标：远端可访问且页面时间戳 48h 内（数据一致性由"构建即从
-    # 仓库状态文件生成"保证，这里可验证的是远端确为新鲜构建产物）
-    c2, c2_ev = False, "依赖标准 1"
-    if c1:
-        m = re.search(r"更新于 (\d{4}-\d{2}-\d{2} \d{2}:\d{2})", body)
-        if m:
-            age = datetime.now() - datetime.strptime(m.group(1), "%Y-%m-%d %H:%M")
-            c2 = age <= timedelta(hours=48)
-            c2_ev = f"远端页面构建于 {m.group(1)}" + ("" if c2 else "（超过 48h，数据陈旧）")
-        else:
-            c2_ev = "远端页面无法解析构建时间戳"
+    # C1 连续性：连续 14 天每天 ≥1 篇成功进草稿箱
+    days = {r["date"] for r in ok_recs}
+    streak, last = 0, max(days) if days else None
+    d = last
+    while d in days:
+        streak += 1
+        d -= timedelta(days=1)
+    c1 = streak >= 14
+    c1_ev = (f"连续产出 {streak}/14 天（最近成功 {last}，累计 {len(ok_recs)} 篇）"
+             if last else "尚无成功进入草稿箱的文章")
 
-    streak, last = delivery_streak(ledger)
-    c3 = streak >= 7
-    c3_ev = f"连续送达 {streak} 天（最近成功 {last}）" if last else "尚无成功送达记录"
+    # C2 可溯源：每篇都要有选题来源 + 审稿记录，且审稿记录路径真实存在
+    MISSING = {"", "—", "-", "无", "TBD"}
+    traceable = []
+    for r in ok_recs:
+        path_ok = r["review"] not in MISSING and (
+            not re.search(r"[/\\]", r["review"]) or (ROOT / r["review"]).exists()
+            or Path(r["review"]).expanduser().exists()
+        )
+        if r["source"] not in MISSING and path_ok:
+            traceable.append(r)
+    c2 = bool(ok_recs) and len(traceable) == len(ok_recs)
+    c2_ev = (f"可溯源 {len(traceable)}/{len(ok_recs)} 篇（选题来源与审稿记录均非空且路径存在）"
+             if ok_recs else "无文章可查")
 
-    done_cnt = sum(1 for done, _ in checklist(inbox, "已处理") if done)
-    c4 = done_cnt >= 1
-    c4_ev = f"INBOX 已处理指令 {done_cnt} 条"
+    # C3 迭代闭环：≥8 条关于选题/质量的教训，且每条附"→ 调整：<证据>"
+    lessons = [l for l in section(ledger, "条目").splitlines()
+               if re.match(r"\[(L|W)-\d+\]", l.strip())
+               and re.search(r"选题|质量", l) and "→ 调整：" in l]
+    c3 = len(lessons) >= 8
+    c3_ev = f"选题/质量教训且带流水线调整证据 {len(lessons)}/8 条"
+
+    # C4 数据回流：真实数据文件优先；否则认经验证的替代方案结论文档
+    data_files = [p for p in (ROOT / "workspace" / "data").glob("wechat_stats.*")
+                  if p.is_file() and p.stat().st_size > 0] if (ROOT / "workspace" / "data").exists() else []
+    doc = ROOT / "docs" / "data-return-feasibility.md"
+    if data_files:
+        c4, c4_ev = True, f"阅读数据文件 {data_files[0].name}（{data_files[0].stat().st_size} 字节）"
+    elif doc.exists() and "结论：" in doc.read_text(encoding="utf-8", errors="replace"):
+        c4, c4_ev = True, "无直采通道，采用 docs/data-return-feasibility.md 中的替代方案（含结论）"
+    else:
+        c4, c4_ev = False, "既无阅读数据文件，也无 docs/data-return-feasibility.md 结论（PLAN T-014，截止 2026-08-16）"
 
     for i, (ok, ev) in enumerate([(c1, c1_ev), (c2, c2_ev), (c3, c3_ev), (c4, c4_ev)]):
         text = acceptance[i][1] if i < len(acceptance) else f"标准 {i + 1}"
@@ -221,10 +273,9 @@ def main():
         countdown = f"<span class='pill'>距截止 {days} 天</span>"
 
     acceptance = checklist(goal, "验收标准")
-    # 2026-08-10 目标切换 v2：v1 的 acceptance_auto() 判定逻辑不再适用，
-    # 待系统按新验收标准重建（见 INBOX 指令）前，按 GOAL 勾选框如实显示
-    acc_auto = None
-    acc_done = sum(1 for done, _ in acceptance if done)
+    # 2026-08-10 晚场：判定逻辑已按 GOAL v2（内容流水线）重建，见 acceptance_auto()
+    acc_auto = acceptance_auto(acceptance, ledger, inbox)
+    acc_done = sum(1 for ok, _, _ in acc_auto if ok)
     todo = checklist(plan, "待办")
     doing = checklist(plan, "进行中")
 
@@ -269,8 +320,8 @@ footer {{ margin-top:3rem; font-size:.8rem; color:var(--muted); }}
 <div class="goal"><b>{esc(goal_line)}</b>{countdown}</div>
 
 <h2>验收标准（{acc_done}/{len(acceptance)}）</h2>
-<p class="muted">目标已于 2026-08-10 切换为 v2（内容流水线）；自动判定逻辑重建中，暂按 GOAL.md 勾选框显示。</p>
-<ul>{li(acceptance)}</ul>
+<p class="muted">GOAL v2（内容流水线）·自动判定，事实源为 LEDGER 文章产出记录与仓库文件，非人工勾选。</p>
+<ul>{acceptance_li(acc_auto)}</ul>
 
 <h2>任务队列</h2>
 <div class="stats">
