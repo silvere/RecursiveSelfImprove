@@ -12,7 +12,7 @@ summary: "自进化智能系统：单 Agent + git 文件状态机，每日早晚
 
 - 设计文档：`docs/superpowers/specs/2026-08-09-self-evolving-agent-design.md`
 - 实现计划：`docs/superpowers/plans/2026-08-09-rsi-v1-implementation.md`
-- 人的入口：`human/INBOX.md`（指令）、`human/APPROVALS.md`（审批）
+- 人的入口：**在飞书直接给机器人发消息**（每场会话开始前自动收进 INBOX）；也可手改 `human/INBOX.md`（指令）、`human/APPROVALS.md`（审批）
 - 手动触发：`./system/run.sh morning|evening|weekly|smoke`
 
 ## 分层可变性

@@ -48,6 +48,11 @@ trap 'rm -rf "$LOCK"' EXIT
 
 echo "=== RSI $MODE 场 $(date '+%F %T') ===" >>"$LOG"
 
+# 会话开始前自动收取飞书新指令进 INBOX（失败不阻断会话）
+if [ "$MODE" != "smoke" ]; then
+  python3 "$ROOT/system/pull_inbox.py" >>"$LOG" 2>&1 || true
+fi
+
 if [ "$MODE" = "smoke" ]; then
   PROMPT="这是 RSI 系统链路冒烟测试。只回复两个字：正常。不要执行任何其他操作。"
 else
