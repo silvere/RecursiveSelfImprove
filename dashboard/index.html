@@ -33,7 +33,7 @@ footer { margin-top:3rem; font-size:.8rem; color:var(--muted); }
 </head>
 <body>
 <h1>🌀 RSI · 自进化系统仪表盘</h1>
-<p class="muted">更新于 2026-08-10 07:33 ｜ 数据源：git 仓库状态文件</p>
+<p class="muted">更新于 2026-08-10 10:47 ｜ 数据源：git 仓库状态文件</p>
 
 <div class="goal"><b>14 天内（截止 2026-08-23），让本框架自己的仪表盘在 rsi.jerryai.cn 上线，且数据真实。</b><span class='pill'>距截止 13 天</span></div>
 
@@ -45,29 +45,31 @@ footer { margin-top:3rem; font-size:.8rem; color:var(--muted); }
 
 <h2>任务队列</h2>
 <div class="stats">
-  <div class="stat"><b>4</b>待办</div>
+  <div class="stat"><b>2</b>待办</div>
   <div class="stat"><b>0</b>进行中</div>
 </div>
-<ul><li class='muted'>（无进行中任务）</li><li class='todo'>⬜ T-001 等待"启用 GitHub Pages + 转公开仓库"审批（A-001/A-002）通过后，启用 Pages 并验证 rsi.jerryai.cn 可访问 ｜curl 返回 200</li>
-<li class='todo'>⬜ T-002 完善仪表盘：验收标准自动打勾（从 GOAL.md 与实际数据比对）｜仪表盘勾选状态与事实一致</li>
-<li class='todo'>⬜ T-003 演练介入闭环：请人在飞书回复一条指令，验证其落入 INBOX 并在下场会话被执行 ｜journal 中有对应执行记录</li>
-<li class='todo'>⬜ T-004 简报送达计数器：在 LEDGER 中记录连续送达天数 ｜LEDGER 有逐日记录</li></ul>
+<ul><li class='muted'>（无进行中任务）</li><li class='todo'>⬜ T-001 等待"启用 GitHub Pages + 转公开仓库"审批（A-001/A-002）通过后，启用 Pages 并验证 rsi.jerryai.cn 可访问 ｜curl 返回 200 ｜堵点：A-001/A-002 仍 pending</li>
+<li class='todo'>⬜ T-003 演练介入闭环：请人在飞书回复一条指令，验证其落入 INBOX 并在下场会话被执行 ｜journal 中有对应执行记录 ｜堵点：需人配合，等飞书回复自然触发</li></ul>
 
 <h2>待审批</h2>
 <div class="tablewrap"><table>
 <tr><th>ID</th><th>动作</th><th>理由</th><th>状态</th></tr>
-<tr><td>A-001</td><td>将本仓库 github.com/silvere/RecursiveSelfImprove 转为 public</td><td>GitHub Pages 免费版要求公开仓库；仓库内容为系统状态文件，无密钥（已 .gitignore 日志）</td><td>🟡 pending</td></tr>
-<tr><td>A-002</td><td>启用 GitHub Pages（分支 main，目录 /dashboard）并在 Cloudflare 给 jerryai.cn 添加 CNAME 记录 rsi → silvere.github.io</td><td>达成 GOAL 验收标准第 1 条：rsi.jerryai.cn 公网可访问</td><td>🟡 pending</td></tr>
+<tr><td>A-001</td><td>将本仓库 github.com/silvere/RecursiveSelfImprove 转为 public</td><td>GitHub Pages 免费版要求公开仓库；仓库内容为系统状态文件，无密钥（已 .gitignore 日志）</td><td> done（2026-08-10 批准并执行，`gh repo view` 返回 PUBLIC）</td></tr>
+<tr><td>A-002</td><td>启用 GitHub Pages（经 Actions workflow 部署 dashboard/ 目录——Pages 分支模式只支持 / 与 /docs，故用 workflow 达成同一目的）并在 Cloudflare 给 jerryai.cn 添加 CNAME 记录 rsi → silvere.github.io</td><td>达成 GOAL 验收标准第 1 条：rsi.jerryai.cn 公网可访问</td><td> approved·执行中（Pages 已部署且域名已绑定；**剩 Cloudflare 添加 CNAME 一步，本机无 CF API 凭证，需人操作**：DNS 记录 `rsi` CNAME `silvere.github.io`，先关代理/灰云以便 GitHub 签发证书）</td></tr>
 </table></div>
 
 <h2>最近日志</h2>
+<div class='card'><h4>2026-08-10-am</h4><p>首场自主早场：完成 T-002（验收标准自动判定）与 T-004（送达计数器代码化），T-001/T-003 仍被外部依赖阻塞。</p></div>
 <div class='card'><h4>2026-08-09-pm</h4><p>系统建成：骨架、三份会话协议、运行时、launchd 定时、仪表盘、飞书链路全部就位并通过验证。</p></div>
 
 <h2>复盘账本（最新）</h2>
-<ul><li>[L-001] 2026-08-09 ｜打法 ｜macOS 自动化脚本不可假设 GNU 工具存在（无 timeout/flock），须用 perl alarm 与 mkdir 锁替代 ｜system/run.sh 实现</li></ul>
+<ul><li>[L-002] 2026-08-10 ｜打法 ｜累积指标（连续送达天数）只记原始事实行，派生数字由代码计算——晚场追加"日期｜成功/失败｜备注"即可，天数由 gen_dashboard.py delivery_streak() 推导，杜绝会话手算漂移 ｜system/gen_dashboard.py + 6 组边界用例通过</li>
+<li>[L-001] 2026-08-09 ｜打法 ｜macOS 自动化脚本不可假设 GNU 工具存在（无 timeout/flock），须用 perl alarm 与 mkdir 锁替代 ｜system/run.sh 实现</li></ul>
 
 <h2>Git 活动</h2>
-<ul><li><code>6941c5b chore: 建设期错误日志</code></li>
+<ul><li><code>5b6d97b feat: Pages 部署 workflow + A-001/A-002 审批落地</code></li>
+<li><code>263dbe8 am: T-002 验收标准自动判定 + T-004 送达计数器代码化</code></li>
+<li><code>6941c5b chore: 建设期错误日志</code></li>
 <li><code>7af270d pm: 系统诞生日——全链路建成并通过验证</code></li>
 <li><code>d84e6db feat: launchd 定时任务配置</code></li>
 <li><code>c5d99e1 feat: 运行时脚本（锁/超时/告警/smoke）</code></li>
