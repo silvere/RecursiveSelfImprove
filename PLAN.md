@@ -19,8 +19,7 @@ summary: "围绕 GOAL v2（内容流水线）重排：先打通最小端到端�
 
 ## 待办
 
-- [ ] T-010 **端到端跑通 1 篇**（不求质量，求全程有证据）：手动选一个题 → aiwriter2 出稿 → 转成 AIWriter/posts 结构 → wechat-sync 同步 → 拿到 media_id ｜验收：LEDGER"文章产出记录"出现第一行且 media_id 非空 ｜排期滚回 2026-08-13 01:30（原定 08-11 早场因调度自杀式事故停摆两天未执行，见 L-008）｜**08-12 晚场已确认可用素材**：`AIWriter2/articles/2026-08-08-hobby` 已有完整六刀审稿记录（06-review.md，必修9/可选6/驳回2 均已处置）与终稿 final.md（62 行，无配图），直接拿它端到端跑通即可，不必现场重新生成一篇——避开 H4（30 分钟内跑完锦标赛+七刀）这一未验证假设的预算风险。参照 `AIWriter/posts/2026-08-11/*/article.html` 的目标格式（内联 CSS 样式模板，非纯 markdown 转换）
-- [ ] T-011 **写转换桥 `system/pipeline/to_posts.py`**：把 aiwriter2 产物（markdown + 配图）转成 wechat-sync 认的 `posts/YYYY-MM-DD/<slug>/article.html` + 元数据 ｜验收：对已有的 `AIWriter2/articles/2026-08-08-hobby` 跑一次，产物通过 wechat-sync Step 3 状态检查 ｜依赖 T-010 暴露的实际格式差异
+- [ ] T-017 **修 WebP 配图阻塞（最高优先，阻塞 14 天连续性验收）**：给 `AIWriter/skills/scripts/fill_images.py::_download_url` 加"下载后按魔数判真实类型，WebP 一律转 PNG 再存"；修完对 `posts/2026-08-13/shua-shouji-bu-qian-daoqian` 用 `gh workflow run ... --field force=true` 重发验证 ｜验收：`.wechat-sync.json` 的 `uploaded_image_count > 0` ｜依据 L-012 / L-013
 - [ ] T-012 **选题入口接 wtqn**：每日从 wtqn 问题库取 3 条候选，落地为 `workspace/topics/YYYY-MM-DD.md`（含来源链接），供当日成稿选用 ｜验收：连续 2 天有候选文件且每条可回溯到 wtqn 原始条目（服务 GOAL 验收第 2 条"可溯源"）
 - [ ] T-013 **一键化 `system/pipeline/run_daily.sh`**：把 T-010 的手工步骤串成一条命令，失败即中止并报错到简报 ｜验收：连跑 2 天，会话只需执行一条命令 + 人工审校
 - [ ] T-014 **数据回流可行性结论**（GOAL 验收第 4 条，人指定第一周内出结论，截止 2026-08-16）：查明公众号已发布文章阅读数能否经 API/后台导出/代理指标取得，写 `docs/data-return-feasibility.md` ｜验收：文档给出"可行（附取数命令实测输出）"或"不可行（附被拒证据）+ 经验证的代理指标方案"
@@ -31,6 +30,9 @@ summary: "围绕 GOAL v2（内容流水线）重排：先打通最小端到端�
 （无）
 
 ## 已完成
+
+- [x] T-010 **端到端跑通第一篇**（2026-08-13 s1）｜证据：LEDGER"文章产出记录"首行 media_id=-Eu-2F7MukrOEiQGhnmJq7hfaBuqStdLXmtRD1EfGDqSvcAXDjVRAgvwb3tBLPrM；CI run 31624378522 输出 `汇总：同步 1 | 失败 0`；AIWriter commit bd8bd44（文章）→ 120d482（配图）→ 3ef5c6c/后续（封面修复）｜实测耗时：约 75 分钟（超单场预算 2.5 倍，全部超支花在 WebP 配图问题的 4 次 CI 往返上，见 L-012）
+- [x] T-011 **转换桥 `system/pipeline/to_posts.py`**（2026-08-13 s1）｜证据：脚本 109 行，实测对 `AIWriter2/articles/2026-08-08-hobby` 产出 article.md(3,960 字符)+article.html(16,814 字符)，占位符正则匹配数 1，产物通过 wechat-sync 全流程并拿到 media_id ｜遗留：封面生成尚未纳入脚本（本次手工 sips 转换），并入 T-017
 
 - [x] T-001 rsi.jerryai.cn 上线 ｜证据：2026-08-10 经 tunnel ingress + route dns 部署（A-001/A-002 批准当日执行），DoH 验证 HTTP 200；本地服务 cn.jerryai.rsi-dashboard（127.0.0.1:8906），备用镜像 silvere.github.io/RecursiveSelfImprove
 - [x] T-002 完善仪表盘：验收标准自动打勾（v1 版）｜证据：gen_dashboard.py `acceptance_auto()`；v1 目标停用后该逻辑于 2026-08-10 晚场被 T-016 重写

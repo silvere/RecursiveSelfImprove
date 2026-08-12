@@ -23,12 +23,19 @@ summary: "跨天累积的教训、规律与可复用打法。"
 [L-007] 2026-08-10 ｜打法 ｜验收判定必须防自欺：v2 的"可溯源"判定不只检查审稿记录字段非空，还检查该路径在磁盘上真实存在（`article_records()` + `acceptance_auto()` C2）。仅检查非空的话，会话写一个不存在的路径就能把标准点亮 ｜证据：system/gen_dashboard.py；构造用例中"标题A"填了 workspace/reviews/a.md（不存在）→ 判定 0/2 可溯源
 
 [L-009] 2026-08-12 ｜打法 ｜晚场会话遇到预算明显不够的大任务（如"跑通 aiwriter2 全流水线"，H4 未验证、乐观估计已超单场 30 分钟预算）时，不要硬冲导致烂尾，改为**侦察+沉淀**：花几分钟定位可复用的具体素材/断点（本次发现 `AIWriter2/articles/2026-08-08-hobby` 已有完整六刀审稿记录可直接拿来测试），把发现写进 PLAN 对应任务条目，让下一场不用重新搜索就能直接开工 ｜证据：本条对应的 PLAN.md T-010 更新、human/INBOX.md 处理记录
+[L-010] 2026-08-13 ｜错误 ｜**LEDGER 的"文章产出记录"段一直缺 `## ` 标题行**，而 gen_dashboard.py `article_records()` 用 `section(ledger_text, "文章产出记录")` 按标题取段——也就是说，即使今天写下第一行产出记录，仪表盘也会读到空、四条验收永远显示 0/4，且没有任何报错。这是"验收判定悄悄失效"类故障：比判错更危险，因为它看起来正常 ｜证据：`grep -n "^## " LEDGER.md` 改前只返回"条目/简报送达记录"两节 ｜→ 调整：本场补回 `## 文章产出记录` 标题；后续 T-015 落地时给 gen_dashboard 加一条"段落缺失即报警"的自检，不让空段和"段不存在"共用同一个静默返回值
+[L-014] 2026-08-13 ｜错误→打法 ｜**收尾时把 `git add -A && git commit --amend` 打在了别的仓库**：清理 worktree 的那条命令以 `cd /Users/jingweisun/Code/AIWriter` 开头，后面用 `;` 接了本该在 RSI 仓库执行的 amend——结果 amend 了人的在途分支 HEAD（4d64450 → 985739e）并把 30+ 个未跟踪的旧配图一并 add 进去。已用 `git reset --mixed 4d64450` 完全还原（HEAD、ahead 19、未跟踪状态均复原，未 push 出去） ｜证据：还原后 `git log --oneline -1` = 4d64450、`git status -sb` = ahead 19 ｜→ 调整：**跨仓库操作的收尾命令一律拆成独立调用，绝不用 `;`/`&&` 把"在别的仓库做的事"和"在本仓库提交"串在一行**；`git add -A` 在非本仓库目录下等于把别人的工作区一起打包，风险远高于省下的一次调用
+[L-012] 2026-08-13 ｜错误→打法 ｜**配图链路的隐性类型不匹配卡死了首篇同步 4 次**：CI「自动填充文章配图」从 pexels 下载的图片实为 **WebP**，却按 `.jpg` 存盘（`file` 输出 `RIFF ... Web/P image`）；微信 `material/add_material` 按真实内容校验，返回 `errcode=40113 unsupported file type`。中间还踩了两个假线索：先以为"没有封面"（其实是 `_pick_cover` 找到了但上传被拒）、后以为是 runner checkout 竞态（重试 3 次同样报错）。最终 `sips -s format png` 转成真 PNG 并改名 `cover.png` 后一次通过 ｜证据：run 31624378522 `✓ media_id=-Eu-2F7Mukr... 汇总：同步 1 | 失败 0`；对照组 `posts/2026-08-11/meta-muse-*/cover.jpg` 真实类型是 PNG 也被接受 → 证明微信认内容不认扩展名，只拒 WebP ｜→ 调整：①PLAN 新增 T-017：给 `AIWriter/skills/scripts/fill_images.py::_download_url` 加"下载后按魔数判类型，WebP 一律转 PNG 再存"，否则每篇 pexels 配图文章都会卡住（这是 14 天连续性验收的系统性阻塞源）；②`to_posts.py` 后续接管封面时直接产 `cover.png`
+[L-013] 2026-08-13 ｜错误 ｜**首篇成稿的正文图片数为 0**（`.wechat-sync.json` 的 `uploaded_image_count: 0`）：封面已上传成功，但正文里那张 `images/concept_01.jpg` 仍是 WebP，被静默跳过。也就是说草稿箱里这篇是"有封面、无正文配图"的裸文 ｜证据：同上 marker 文件 ｜→ 调整：并入 T-017 一起修（同一个根因），修完后本篇用 `--force` 重发一次验证正文图能上去
+[L-011] 2026-08-13 ｜打法 ｜**跨仓库写文章必须先看目标仓的当前分支**：AIWriter 仓库当时停在人的在途分支 `redo-ai-flavor-fix`（ahead 19 / behind 23），直接 `git commit` 会把系统的产物塞进人的未完成工作里，`git push` 也不会触发 main 上的 CI。正确做法是 `git worktree add --detach /tmp/aiw-main origin/main` + cherry-pick + `push origin HEAD:main`，再把原分支 reset 回去，全程不动人的工作区 ｜证据：本场执行序列（worktree add → cherry-pick bd8bd44 → push 82ff649..bd8bd44 → 原分支 reset 回 4d64450，`git status -sb` 恢复为 ahead 19）
 [L-008] 2026-08-12 ｜错误→打法 ｜**自杀式调度变更事故**：08-11 07:30 会话执行"每 6 小时排班"改造时 `launchctl unload` 了自己所属的定时任务，当场被 SIGTERM 杀死——新定时器没装上、记账没写完、告警代码也一起死了，系统静默停摆 2 天，直到人发现"没有进展"。根因：会话感知不到"我正运行在我要卸载的东西里面"。→ 调整：①三份协议行为边界新增第 6 条"调度自保"禁令（严禁 unload/bootout/kickstart 任何 rsi-* 任务，调度变更=改文件+待外部 reload）；②run.sh 加 SIGTERM trap，被杀先发飞书告警再退出；③交互会话 2026-08-12 已代为装载 rsi-work/rsi-pm 恢复调度 ｜git 本次 commit + launchctl list 输出
+
+## 文章产出记录
 
 （GOAL v2 的原始事实行，派生指标由 gen_dashboard.py 计算，会话不要手写"第 N 天"）
 （格式：日期 ｜标题 ｜选题来源 ｜审稿记录 ｜草稿箱：成功/失败 + media_id 或原因）
 
-（尚无——流水线未打通，见 PLAN T-010）
+2026-08-13 ｜刷手机不欠任何人道歉 ｜aiwriter2 既有存稿（AIWriter2/articles/2026-08-08-hobby/01-brief.md，非 wtqn 选题——选题入口尚未接通，见 T-012）｜/Users/jingweisun/Code/AIWriter2/articles/2026-08-08-hobby/06-review.md ｜草稿箱：成功 media_id=-Eu-2F7MukrOEiQGhnmJq7hfaBuqStdLXmtRD1EfGDqSvcAXDjVRAgvwb3tBLPrM
 
 ## 简报送达记录
 
