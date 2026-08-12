@@ -33,9 +33,9 @@ footer { margin-top:3rem; font-size:.8rem; color:var(--muted); }
 </head>
 <body>
 <h1>🌀 RSI · 自进化系统仪表盘</h1>
-<p class="muted">更新于 2026-08-10 21:36 ｜ 数据源：git 仓库状态文件</p>
+<p class="muted">更新于 2026-08-12 22:28 ｜ 数据源：git 仓库状态文件</p>
 
-<div class="goal"><b>30 天内（截止 2026-09-09），建成"每日选题 → 成稿 → 微信公众号草稿箱"的自动流水线：每天产出 1 篇通过七刀审稿的深度文章并同步到公众号草稿箱；持续迭代流水线，让选题和文章质量越来越好。</b><span class='pill'>距截止 30 天</span></div>
+<div class="goal"><b>30 天内（截止 2026-09-09），建成"每日选题 → 成稿 → 微信公众号草稿箱"的自动流水线：每天产出 1 篇通过七刀审稿的深度文章并同步到公众号草稿箱；持续迭代流水线，让选题和文章质量越来越好。</b><span class='pill'>距截止 28 天</span></div>
 
 <h2>验收标准（0/4）</h2>
 <p class="muted">GOAL v2（内容流水线）·自动判定，事实源为 LEDGER 文章产出记录与仓库文件，非人工勾选。</p>
@@ -60,7 +60,8 @@ footer { margin-top:3rem; font-size:.8rem; color:var(--muted); }
 <div class="tablewrap"><table>
 <tr><th>ID</th><th>动作</th><th>理由</th><th>状态</th></tr>
 <tr><td>A-001</td><td>将本仓库 github.com/silvere/RecursiveSelfImprove 转为 public</td><td>GitHub Pages 免费版要求公开仓库；仓库内容为系统状态文件，无密钥（已 .gitignore 日志）</td><td> done（2026-08-10 批准并执行，`gh repo view` 返回 PUBLIC）</td></tr>
-<tr><td>A-003</td><td>修改 system/prompts/morning.md：把"自进化方法论调研"固化为早场固定环节（精确 diff 见下方 A-003 附录）</td><td>人 2026-08-10 13:38 飞书指令"每天上午 8 点调研行业递归自我进化方法论并直接应用"。这是常设指令，写进 PLAN 会被当成一次性任务做完就消失，只有写进早场协议才真正常设。协议属法律层，故走审批</td><td>🟡 pending</td></tr>
+<tr><td>A-003</td><td>修改 system/prompts/morning.md：把"自进化方法论调研"固化为早场固定环节（精确 diff 见下方 A-003 附录）</td><td>人 2026-08-10 13:38 飞书指令"每天上午 8 点调研行业递归自我进化方法论并直接应用"。这是常设指令，写进 PLAN 会被当成一次性任务做完就消失，只有写进早场协议才真正常设。协议属法律层，故走审批</td><td> done（人 2026-08-10 21:52 飞书"批准"；diff 已由 08-11 早场会话应用，交互会话 08-12 核对无误并补记）</td></tr>
+<tr><td>A-004</td><td>三份协议行为边界新增"调度自保"禁令（禁 launchctl unload/bootout/kickstart 任何 rsi-* 任务）</td><td>2026-08-11 自杀式调度变更事故的直接修复（见 L-008）。法律层变更，由交互会话在事故处置中代为执行，人在场可随时否决回滚</td><td> done（2026-08-12 交互会话执行）</td></tr>
 <tr><td>A-002</td><td>让 rsi.jerryai.cn 公网可访问。执行机制经人指示改为本宅标准作业：named tunnel ingress（127.0.0.1:8906 静态服务）+ `cloudflared tunnel route dns` 建 CNAME，GitHub Pages 降级为备用镜像（silvere.github.io/RecursiveSelfImprove）</td><td>达成 GOAL 验收标准第 1 条</td><td> done（2026-08-10 上线，DoH 独立验证 HTTP 200；操作手册已沉淀至 Claude 记忆库 cf-jerryai-subdomain-playbook）</td></tr>
 </table></div>
 
@@ -70,7 +71,8 @@ footer { margin-top:3rem; font-size:.8rem; color:var(--muted); }
 <div class='card'><h4>2026-08-09-pm</h4><p>系统建成：骨架、三份会话协议、运行时、launchd 定时、仪表盘、飞书链路全部就位并通过验证。</p></div>
 
 <h2>复盘账本（最新）</h2>
-<ul><li>[L-007] 2026-08-10 ｜打法 ｜验收判定必须防自欺：v2 的"可溯源"判定不只检查审稿记录字段非空，还检查该路径在磁盘上真实存在（`article_records()` + `acceptance_auto()` C2）。仅检查非空的话，会话写一个不存在的路径就能把标准点亮 ｜证据：system/gen_dashboard.py；构造用例中"标题A"填了 workspace/reviews/a.md（不存在）→ 判定 0/2 可溯源</li>
+<ul><li>[L-008] 2026-08-12 ｜错误→打法 ｜**自杀式调度变更事故**：08-11 07:30 会话执行"每 6 小时排班"改造时 `launchctl unload` 了自己所属的定时任务，当场被 SIGTERM 杀死——新定时器没装上、记账没写完、告警代码也一起死了，系统静默停摆 2 天，直到人发现"没有进展"。根因：会话感知不到"我正运行在我要卸载的东西里面"。→ 调整：①三份协议行为边界新增第 6 条"调度自保"禁令（严禁 unload/bootout/kickstart 任何 rsi-* 任务，调度变更=改文件+待外部 reload）；②run.sh 加 SIGTERM trap，被杀先发飞书告警再退出；③交互会话 2026-08-12 已代为装载 rsi-work/rsi-pm 恢复调度 ｜git 本次 commit + launchctl list 输出</li>
+<li>[L-007] 2026-08-10 ｜打法 ｜验收判定必须防自欺：v2 的"可溯源"判定不只检查审稿记录字段非空，还检查该路径在磁盘上真实存在（`article_records()` + `acceptance_auto()` C2）。仅检查非空的话，会话写一个不存在的路径就能把标准点亮 ｜证据：system/gen_dashboard.py；构造用例中"标题A"填了 workspace/reviews/a.md（不存在）→ 判定 0/2 可溯源</li>
 <li>[L-006] 2026-08-10 ｜错误 ｜v2 流水线的第一个断点在两个仓库之间：aiwriter2 产物落在 `AIWriter2/articles/&lt;slug&gt;/`，而 wechat-sync 只扫 `AIWriter/posts/YYYY-MM-DD/&lt;slug&gt;/article.html`（其 Step 2 的 find 命令写死此路径）。此前"复用既有资产即可打通"的默认假设不成立，必须写转换桥 ｜证据：`~/.claude/commands/wechat-sync.md` Step 2；`ls AIWriter2/articles/` → 2026-07-12-ai-learning 等目录 ｜→ 调整：PLAN 新增 T-011（system/pipeline/to_posts.py），且 T-010 改为"先手工端到端跑通 1 篇暴露真实格式差异"，不先写代码</li>
 <li>[L-003] 2026-08-10 ｜打法 ｜仪表盘经 named tunnel 上线（launchd cn.jerryai.rsi-dashboard 在 127.0.0.1:8906 起 http.server 服务 dashboard/，tunnel ingress 转发）——dashboard/ 是实时服务目录，gen_dashboard.py 一跑完线上即更新，无需等 push；jerryai.cn 加子域的完整手册在 Claude 记忆库 cf-jerryai-subdomain-playbook ｜https://rsi.jerryai.cn HTTP 200</li>
 <li>[L-004] 2026-08-10 ｜错误→打法 ｜本机 DNS 解析层不可信：Astrill VPN 代理（198.19.255.254）会长期缓存陈旧 NXDOMAIN，导致新上线域名在本机 curl exit 6 但公网正常。凡判定"站点是否可访问"必须以公网视角为准——http_check() 已内置 curl --doh-url https://1.1.1.1/dns-query 兜底 ｜system/gen_dashboard.py http_check()</li>
@@ -79,7 +81,8 @@ footer { margin-top:3rem; font-size:.8rem; color:var(--muted); }
 <li>[L-001] 2026-08-09 ｜打法 ｜macOS 自动化脚本不可假设 GNU 工具存在（无 timeout/flock），须用 perl alarm 与 mkdir 锁替代 ｜system/run.sh 实现</li></ul>
 
 <h2>Git 活动</h2>
-<ul><li><code>f3eaa2f chore: 常设指令路由说明——自进化调研入早场协议走审批，政策层免请示</code></li>
+<ul><li><code>9aa2850 pm: 收件箱清空(A-003提案)、PLAN 按 v2 重排、仪表盘验收判定重建，实测 0/4</code></li>
+<li><code>f3eaa2f chore: 常设指令路由说明——自进化调研入早场协议走审批，政策层免请示</code></li>
 <li><code>b16b649 feat: GOAL v2 生效——内容流水线（人于 2026-08-10 批准）；仪表盘判定过渡显示</code></li>
 <li><code>0598cbc feat: 飞书实时收信长连接（inbox_listener + launchd 常驻），收到即回执</code></li>
 <li><code>afd0654 feat: 飞书收信——对机器人说话即填 INBOX（pull_inbox.py + run.sh 前置收取）</code></li>
@@ -92,8 +95,7 @@ footer { margin-top:3rem; font-size:.8rem; color:var(--muted); }
 <li><code>7af270d pm: 系统诞生日——全链路建成并通过验证</code></li>
 <li><code>d84e6db feat: launchd 定时任务配置</code></li>
 <li><code>c5d99e1 feat: 运行时脚本（锁/超时/告警/smoke）</code></li>
-<li><code>a9e1634 feat: 仪表盘生成器与 CNAME</code></li>
-<li><code>85f9bf1 feat: 三份会话协议（早场/晚场/周审）</code></li></ul>
+<li><code>a9e1634 feat: 仪表盘生成器与 CNAME</code></li></ul>
 
 <footer>RSI · RecursiveSelfImprove ｜ 心智外置于 git，此页由 system/gen_dashboard.py 生成</footer>
 </body>

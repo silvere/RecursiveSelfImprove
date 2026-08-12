@@ -2,7 +2,7 @@
 
 # 行为边界（不可违反）
 
-与晚场协议完全一致：GOAL.md 只读；system/prompts/ 不可改（提案走 APPROVALS）；未 approved 的外发动作禁止（飞书简报除外）；改 STRATEGY 须在 journal 留证据；一切进展声明须附证据。
+与晚场协议完全一致：GOAL.md 只读；system/prompts/ 不可改（提案走 APPROVALS）；未 approved 的外发动作禁止（飞书简报除外）；改 STRATEGY 须在 journal 留证据；一切进展声明须附证据；严禁 `launchctl unload/bootout/kickstart` 任何 cn.jerryai.rsi-* 任务（会杀死本会话，见 L-008）。
 
 # 周审流程
 

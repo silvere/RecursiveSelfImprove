@@ -22,7 +22,7 @@ summary: "跨天累积的教训、规律与可复用打法。"
 [L-006] 2026-08-10 ｜错误 ｜v2 流水线的第一个断点在两个仓库之间：aiwriter2 产物落在 `AIWriter2/articles/<slug>/`，而 wechat-sync 只扫 `AIWriter/posts/YYYY-MM-DD/<slug>/article.html`（其 Step 2 的 find 命令写死此路径）。此前"复用既有资产即可打通"的默认假设不成立，必须写转换桥 ｜证据：`~/.claude/commands/wechat-sync.md` Step 2；`ls AIWriter2/articles/` → 2026-07-12-ai-learning 等目录 ｜→ 调整：PLAN 新增 T-011（system/pipeline/to_posts.py），且 T-010 改为"先手工端到端跑通 1 篇暴露真实格式差异"，不先写代码
 [L-007] 2026-08-10 ｜打法 ｜验收判定必须防自欺：v2 的"可溯源"判定不只检查审稿记录字段非空，还检查该路径在磁盘上真实存在（`article_records()` + `acceptance_auto()` C2）。仅检查非空的话，会话写一个不存在的路径就能把标准点亮 ｜证据：system/gen_dashboard.py；构造用例中"标题A"填了 workspace/reviews/a.md（不存在）→ 判定 0/2 可溯源
 
-## 文章产出记录
+[L-008] 2026-08-12 ｜错误→打法 ｜**自杀式调度变更事故**：08-11 07:30 会话执行"每 6 小时排班"改造时 `launchctl unload` 了自己所属的定时任务，当场被 SIGTERM 杀死——新定时器没装上、记账没写完、告警代码也一起死了，系统静默停摆 2 天，直到人发现"没有进展"。根因：会话感知不到"我正运行在我要卸载的东西里面"。→ 调整：①三份协议行为边界新增第 6 条"调度自保"禁令（严禁 unload/bootout/kickstart 任何 rsi-* 任务，调度变更=改文件+待外部 reload）；②run.sh 加 SIGTERM trap，被杀先发飞书告警再退出；③交互会话 2026-08-12 已代为装载 rsi-work/rsi-pm 恢复调度 ｜git 本次 commit + launchctl list 输出
 
 （GOAL v2 的原始事实行，派生指标由 gen_dashboard.py 计算，会话不要手写"第 N 天"）
 （格式：日期 ｜标题 ｜选题来源 ｜审稿记录 ｜草稿箱：成功/失败 + media_id 或原因）

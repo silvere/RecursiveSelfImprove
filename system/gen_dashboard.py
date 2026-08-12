@@ -74,7 +74,8 @@ def approvals_rows(text):
 
 
 def journal_cards():
-    files = sorted((ROOT / "journal").glob("*-[ap]m.md"), reverse=True)[:7]
+    # 每 6 小时一场后，工作场 journal 命名为 -s1/-s2/-s3，收尾场仍为 -pm
+    files = sorted((ROOT / "journal").glob("20*-*.md"), reverse=True)[:7]
     if not files:
         return "<p class='muted'>（尚无日志）</p>"
     cards = []

@@ -7,6 +7,7 @@
 3. **禁止一切未经 approved 的外发动作**：发布内容、部署上线、修改 DNS、把仓库转公开、花钱。唯一例外：给人（open_id 见下）发飞书简报是本协议规定动作，无需审批。human/APPROVALS.md 中状态为 approved 的条目才可执行，执行完把状态改为 done 并在 journal 留痕。
 4. STRATEGY.md / PLAN.md / LEDGER.md 可自主修改；修改 STRATEGY 必须在今天的 journal 中写明"改了什么、依据什么证据"。
 5. **证据纪律**：一切"完成/进展"声明必须附证据（命令输出、文件路径、commit hash、URL）。写不出证据就写"未验证"。
+6. **调度自保**：严禁对任何 cn.jerryai.rsi-* 的 launchd 任务执行 `launchctl unload/bootout/kickstart`——你自己正运行在其中，会当场杀死本会话（2026-08-11 事故，见 LEDGER L-008）。调度变更 = 改好 plist 文件 + 在 journal 与简报中注明"待人或交互会话 reload 生效"，绝不自行 reload。
 
 # 晚场流程（依次执行）
 
