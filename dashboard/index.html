@@ -33,7 +33,7 @@ footer { margin-top:3rem; font-size:.8rem; color:var(--muted); }
 </head>
 <body>
 <h1>🌀 RSI · 自进化系统仪表盘</h1>
-<p class="muted">更新于 2026-08-13 01:51 ｜ 数据源：git 仓库状态文件</p>
+<p class="muted">更新于 2026-08-13 07:38 ｜ 数据源：git 仓库状态文件</p>
 
 <div class="goal"><b>30 天内（截止 2026-09-09），建成"每日选题 → 成稿 → 微信公众号草稿箱"的自动流水线：每天产出 1 篇通过七刀审稿的深度文章并同步到公众号草稿箱；持续迭代流水线，让选题和文章质量越来越好。</b><span class='pill'>距截止 27 天</span></div>
 
@@ -46,11 +46,10 @@ footer { margin-top:3rem; font-size:.8rem; color:var(--muted); }
 
 <h2>任务队列</h2>
 <div class="stats">
-  <div class="stat"><b>5</b>待办</div>
+  <div class="stat"><b>4</b>待办</div>
   <div class="stat"><b>0</b>进行中</div>
 </div>
-<ul><li class='muted'>（无进行中任务）</li><li class='todo'>⬜ T-017 **修 WebP 配图阻塞（最高优先，阻塞 14 天连续性验收）**：给 `AIWriter/skills/scripts/fill_images.py::_download_url` 加"下载后按魔数判真实类型，WebP 一律转 PNG 再存"；修完对 `posts/2026-08-13/shua-shouji-bu-qian-daoqian` 用 `gh workflow run ... --field force=true` 重发验证 ｜验收：`.wechat-sync.json` 的 `uploaded_image_count &gt; 0` ｜依据 L-012 / L-013</li>
-<li class='todo'>⬜ T-012 **选题入口接 wtqn**：每日从 wtqn 问题库取 3 条候选，落地为 `workspace/topics/YYYY-MM-DD.md`（含来源链接），供当日成稿选用 ｜验收：连续 2 天有候选文件且每条可回溯到 wtqn 原始条目（服务 GOAL 验收第 2 条"可溯源"）</li>
+<ul><li class='muted'>（无进行中任务）</li><li class='todo'>⬜ T-012 **选题入口接 wtqn**：每日从 wtqn 问题库取 3 条候选，落地为 `workspace/topics/YYYY-MM-DD.md`（含来源链接），供当日成稿选用 ｜验收：连续 2 天有候选文件且每条可回溯到 wtqn 原始条目（服务 GOAL 验收第 2 条"可溯源"）</li>
 <li class='todo'>⬜ T-013 **一键化 `system/pipeline/run_daily.sh`**：把 T-010 的手工步骤串成一条命令，失败即中止并报错到简报 ｜验收：连跑 2 天，会话只需执行一条命令 + 人工审校</li>
 <li class='todo'>⬜ T-014 **数据回流可行性结论**（GOAL 验收第 4 条，人指定第一周内出结论，截止 2026-08-16）：查明公众号已发布文章阅读数能否经 API/后台导出/代理指标取得，写 `docs/data-return-feasibility.md` ｜验收：文档给出"可行（附取数命令实测输出）"或"不可行（附被拒证据）+ 经验证的代理指标方案"</li>
 <li class='todo'>⬜ T-015 **七刀审稿记录归档规范**：定义每篇文章的审稿痕迹存放路径与最小字段（选题来源／论点竞技场结论／七刀修改），使 GOAL 验收第 2 条可机器检查 ｜验收：gen_dashboard 的 C2 判定能读到该路径并给出可溯源篇数</li></ul>
@@ -65,6 +64,7 @@ footer { margin-top:3rem; font-size:.8rem; color:var(--muted); }
 </table></div>
 
 <h2>最近日志</h2>
+<div class='card'><h4>2026-08-13-s2</h4><p>T-017 闭环：WebP 阻塞的真因不在下载后而在请求头（Accept 内容协商），零依赖修掉；顺带发现并修掉 --force 的空操作缺陷，首篇正文配图已进草稿箱（uploaded_image_count 0→1）。</p></div>
 <div class='card'><h4>2026-08-13-s1</h4><p>T-010 端到端跑通：hobby 终稿经自写转换桥进 AIWriter/posts，push 触发配图 CI + 微信同步 CI；顺带修掉 LEDGER 产出记录段缺标题导致验收永远读空的静默故障。</p></div>
 <div class='card'><h4>2026-08-12-pm</h4><p>调度事故修复后首场晚场：处理飞书指令、核实今日无工作场执行、为 T-010 定位可复用素材。</p></div>
 <div class='card'><h4>2026-08-10-pm</h4><p>目标切换 v2 当日：清空 INBOX（常设指令路由为 A-003 提案）、PLAN 全量重排为流水线任务、仪表盘验收判定按 v2 重建，实测 0/4 如实。</p></div>
@@ -74,15 +74,16 @@ footer { margin-top:3rem; font-size:.8rem; color:var(--muted); }
 <h2>复盘账本（最新）</h2>
 <ul><li>[L-008] 2026-08-12 ｜错误→打法 ｜**自杀式调度变更事故**：08-11 07:30 会话执行"每 6 小时排班"改造时 `launchctl unload` 了自己所属的定时任务，当场被 SIGTERM 杀死——新定时器没装上、记账没写完、告警代码也一起死了，系统静默停摆 2 天，直到人发现"没有进展"。根因：会话感知不到"我正运行在我要卸载的东西里面"。→ 调整：①三份协议行为边界新增第 6 条"调度自保"禁令（严禁 unload/bootout/kickstart 任何 rsi-* 任务，调度变更=改文件+待外部 reload）；②run.sh 加 SIGTERM trap，被杀先发飞书告警再退出；③交互会话 2026-08-12 已代为装载 rsi-work/rsi-pm 恢复调度 ｜git 本次 commit + launchctl list 输出</li>
 <li>[L-011] 2026-08-13 ｜打法 ｜**跨仓库写文章必须先看目标仓的当前分支**：AIWriter 仓库当时停在人的在途分支 `redo-ai-flavor-fix`（ahead 19 / behind 23），直接 `git commit` 会把系统的产物塞进人的未完成工作里，`git push` 也不会触发 main 上的 CI。正确做法是 `git worktree add --detach /tmp/aiw-main origin/main` + cherry-pick + `push origin HEAD:main`，再把原分支 reset 回去，全程不动人的工作区 ｜证据：本场执行序列（worktree add → cherry-pick bd8bd44 → push 82ff649..bd8bd44 → 原分支 reset 回 4d64450，`git status -sb` 恢复为 ahead 19）</li>
+<li>[L-015] 2026-08-13 ｜规律 ｜**"下载后转格式"是补救，"请求时就别要"才是修复**：WebP 卡死链路（L-012/L-013）的真因不在下载之后，而在请求头——pexels/unsplash 的 CDN 按 `Accept` 做内容协商，头里带 `image/webp` 就返 WebP，去掉就返真 JPEG。同一个 URL 实测：带 webp 头 → `content-type: image/webp` / `file` 判 `RIFF ... Web/P image`；换成 `image/jpeg,image/png,image/*;q=0.8` → `content-type: image/jpeg` / `JPEG image data ... 940x627`。原计划（T-017 初版）是"下载后按魔数转 PNG"，那要引入 Pillow 依赖 + 一层转换代码，且每张图都多一次解码编码；改请求头是零依赖零转换。**一般化：遇到"产物格式不对"的问题，先回溯到这个格式是在哪一步被决定的——很多时候上游有一个开关，比下游加一层转换器便宜一个数量级。** ｜证据：本场 curl 对照实测（两个 Accept 头，同一 pexels URL）；修复后 `_download_url` 实测落盘魔数 `ff d8 ff e1` ｜→ 调整：`AIWriter/skills/scripts/fill_images.py` 的 `_ACCEPT_IMAGE` 常量（commit 0cb9cdc），魔数检测只作为"别的源无视 Accept"的兜底，且无 Pillow 时拒图而非放行——宁可少一张图，也不让 WebP 再流进仓库</li>
+<li>[L-016] 2026-08-13 ｜错误 ｜**逃生开关只覆盖了一半路径 = 没有逃生开关**：`sync_drafts.py --force` 的文档语义是"强制重发已同步文章"，但本地 `.wechat-sync.json` 的存在性检查排在 `--force` 分支**之前**且不看 force——于是 force 唯一的适用对象（已同步过的文章）在到达强制分支前就被筛掉了，命令静默变成空操作。第一次验证 T-017 因此白跑一轮 CI（run 31651326044：`已有标记，跳过 / 汇总：同步 0`）。**这类 bug 的共性：把"跳过"写成早退（early continue），而把"例外"写在早退之后。** ｜证据：修前 run 31651326044 同步 0；修后 run 31651452747 `强制模式：删除旧草稿 → ✓ media_id=... 图片1 → 汇总：同步 1` ｜→ 调整：commit e2af4ee 改为 `if marker.exists() and not args.force`；写法规约记此：**凡有 `--force`/`--overwrite` 类开关，所有早退分支都必须显式与它求交，不能依赖"后面还有一个 force 分支"**</li>
 <li>[L-013] 2026-08-13 ｜错误 ｜**首篇成稿的正文图片数为 0**（`.wechat-sync.json` 的 `uploaded_image_count: 0`）：封面已上传成功，但正文里那张 `images/concept_01.jpg` 仍是 WebP，被静默跳过。也就是说草稿箱里这篇是"有封面、无正文配图"的裸文 ｜证据：同上 marker 文件 ｜→ 调整：并入 T-017 一起修（同一个根因），修完后本篇用 `--force` 重发一次验证正文图能上去</li>
 <li>[L-012] 2026-08-13 ｜错误→打法 ｜**配图链路的隐性类型不匹配卡死了首篇同步 4 次**：CI「自动填充文章配图」从 pexels 下载的图片实为 **WebP**，却按 `.jpg` 存盘（`file` 输出 `RIFF ... Web/P image`）；微信 `material/add_material` 按真实内容校验，返回 `errcode=40113 unsupported file type`。中间还踩了两个假线索：先以为"没有封面"（其实是 `_pick_cover` 找到了但上传被拒）、后以为是 runner checkout 竞态（重试 3 次同样报错）。最终 `sips -s format png` 转成真 PNG 并改名 `cover.png` 后一次通过 ｜证据：run 31624378522 `✓ media_id=-Eu-2F7Mukr... 汇总：同步 1 | 失败 0`；对照组 `posts/2026-08-11/meta-muse-*/cover.jpg` 真实类型是 PNG 也被接受 → 证明微信认内容不认扩展名，只拒 WebP ｜→ 调整：①PLAN 新增 T-017：给 `AIWriter/skills/scripts/fill_images.py::_download_url` 加"下载后按魔数判类型，WebP 一律转 PNG 再存"，否则每篇 pexels 配图文章都会卡住（这是 14 天连续性验收的系统性阻塞源）；②`to_posts.py` 后续接管封面时直接产 `cover.png`</li>
-<li>[L-010] 2026-08-13 ｜错误 ｜**LEDGER 的"文章产出记录"段一直缺 `## ` 标题行**，而 gen_dashboard.py `article_records()` 用 `section(ledger_text, "文章产出记录")` 按标题取段——也就是说，即使今天写下第一行产出记录，仪表盘也会读到空、四条验收永远显示 0/4，且没有任何报错。这是"验收判定悄悄失效"类故障：比判错更危险，因为它看起来正常 ｜证据：`grep -n "^## " LEDGER.md` 改前只返回"条目/简报送达记录"两节 ｜→ 调整：本场补回 `## 文章产出记录` 标题；后续 T-015 落地时给 gen_dashboard 加一条"段落缺失即报警"的自检，不让空段和"段不存在"共用同一个静默返回值</li>
-<li>[L-009] 2026-08-12 ｜打法 ｜晚场会话遇到预算明显不够的大任务（如"跑通 aiwriter2 全流水线"，H4 未验证、乐观估计已超单场 30 分钟预算）时，不要硬冲导致烂尾，改为**侦察+沉淀**：花几分钟定位可复用的具体素材/断点（本次发现 `AIWriter2/articles/2026-08-08-hobby` 已有完整六刀审稿记录可直接拿来测试），把发现写进 PLAN 对应任务条目，让下一场不用重新搜索就能直接开工 ｜证据：本条对应的 PLAN.md T-010 更新、human/INBOX.md 处理记录</li>
-<li>[L-007] 2026-08-10 ｜打法 ｜验收判定必须防自欺：v2 的"可溯源"判定不只检查审稿记录字段非空，还检查该路径在磁盘上真实存在（`article_records()` + `acceptance_auto()` C2）。仅检查非空的话，会话写一个不存在的路径就能把标准点亮 ｜证据：system/gen_dashboard.py；构造用例中"标题A"填了 workspace/reviews/a.md（不存在）→ 判定 0/2 可溯源</li>
-<li>[L-006] 2026-08-10 ｜错误 ｜v2 流水线的第一个断点在两个仓库之间：aiwriter2 产物落在 `AIWriter2/articles/&lt;slug&gt;/`，而 wechat-sync 只扫 `AIWriter/posts/YYYY-MM-DD/&lt;slug&gt;/article.html`（其 Step 2 的 find 命令写死此路径）。此前"复用既有资产即可打通"的默认假设不成立，必须写转换桥 ｜证据：`~/.claude/commands/wechat-sync.md` Step 2；`ls AIWriter2/articles/` → 2026-07-12-ai-learning 等目录 ｜→ 调整：PLAN 新增 T-011（system/pipeline/to_posts.py），且 T-010 改为"先手工端到端跑通 1 篇暴露真实格式差异"，不先写代码</li></ul>
+<li>[L-014] 2026-08-13 ｜错误→打法 ｜**收尾时把 `git add -A &amp;&amp; git commit --amend` 打在了别的仓库**：清理 worktree 的那条命令以 `cd /Users/jingweisun/Code/AIWriter` 开头，后面用 `;` 接了本该在 RSI 仓库执行的 amend——结果 amend 了人的在途分支 HEAD（4d64450 → 985739e）并把 30+ 个未跟踪的旧配图一并 add 进去。已用 `git reset --mixed 4d64450` 完全还原（HEAD、ahead 19、未跟踪状态均复原，未 push 出去） ｜证据：还原后 `git log --oneline -1` = 4d64450、`git status -sb` = ahead 19 ｜→ 调整：**跨仓库操作的收尾命令一律拆成独立调用，绝不用 `;`/`&amp;&amp;` 把"在别的仓库做的事"和"在本仓库提交"串在一行**；`git add -A` 在非本仓库目录下等于把别人的工作区一起打包，风险远高于省下的一次调用</li>
+<li>[L-010] 2026-08-13 ｜错误 ｜**LEDGER 的"文章产出记录"段一直缺 `## ` 标题行**，而 gen_dashboard.py `article_records()` 用 `section(ledger_text, "文章产出记录")` 按标题取段——也就是说，即使今天写下第一行产出记录，仪表盘也会读到空、四条验收永远显示 0/4，且没有任何报错。这是"验收判定悄悄失效"类故障：比判错更危险，因为它看起来正常 ｜证据：`grep -n "^## " LEDGER.md` 改前只返回"条目/简报送达记录"两节 ｜→ 调整：本场补回 `## 文章产出记录` 标题；后续 T-015 落地时给 gen_dashboard 加一条"段落缺失即报警"的自检，不让空段和"段不存在"共用同一个静默返回值</li></ul>
 
 <h2>Git 活动</h2>
-<ul><li><code>55595bf feat: 心跳看门狗——26h 无 journal 或调度任务消失即飞书告警（每日 9:00/23:00 巡检）</code></li>
+<ul><li><code>71f808f am: T-010/T-011 闭环——首篇《刷手机不欠任何人道歉》进公众号草稿箱（media_id 已录），修 LEDGER 产出段缺标题的静默失效，定位 WebP 配图阻塞（L-012/013 → T-017）</code></li>
+<li><code>55595bf feat: 心跳看门狗——26h 无 journal 或调度任务消失即飞书告警（每日 9:00/23:00 巡检）</code></li>
 <li><code>2445cf6 pm: 处理飞书指令、为T-010定位可复用素材(hobby文章)、仪表盘重建</code></li>
 <li><code>6123041 fix: 调度自杀事故修复——恢复 6h 排班定时器、协议加调度自保禁令、SIGTERM 告警、补记 A-003/A-004（L-008）</code></li>
 <li><code>9aa2850 pm: 收件箱清空(A-003提案)、PLAN 按 v2 重排、仪表盘验收判定重建，实测 0/4</code></li>
@@ -95,8 +96,7 @@ footer { margin-top:3rem; font-size:.8rem; color:var(--muted); }
 <li><code>1c3d678 chore: A-001 done / A-002 Pages 侧完成，DNS 待人一步</code></li>
 <li><code>5b6d97b feat: Pages 部署 workflow + A-001/A-002 审批落地</code></li>
 <li><code>263dbe8 am: T-002 验收标准自动判定 + T-004 送达计数器代码化</code></li>
-<li><code>6941c5b chore: 建设期错误日志</code></li>
-<li><code>7af270d pm: 系统诞生日——全链路建成并通过验证</code></li></ul>
+<li><code>6941c5b chore: 建设期错误日志</code></li></ul>
 
 <footer>RSI · RecursiveSelfImprove ｜ 心智外置于 git，此页由 system/gen_dashboard.py 生成</footer>
 </body>

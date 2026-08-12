@@ -19,7 +19,6 @@ summary: "围绕 GOAL v2（内容流水线）重排：先打通最小端到端�
 
 ## 待办
 
-- [ ] T-017 **修 WebP 配图阻塞（最高优先，阻塞 14 天连续性验收）**：给 `AIWriter/skills/scripts/fill_images.py::_download_url` 加"下载后按魔数判真实类型，WebP 一律转 PNG 再存"；修完对 `posts/2026-08-13/shua-shouji-bu-qian-daoqian` 用 `gh workflow run ... --field force=true` 重发验证 ｜验收：`.wechat-sync.json` 的 `uploaded_image_count > 0` ｜依据 L-012 / L-013
 - [ ] T-012 **选题入口接 wtqn**：每日从 wtqn 问题库取 3 条候选，落地为 `workspace/topics/YYYY-MM-DD.md`（含来源链接），供当日成稿选用 ｜验收：连续 2 天有候选文件且每条可回溯到 wtqn 原始条目（服务 GOAL 验收第 2 条"可溯源"）
 - [ ] T-013 **一键化 `system/pipeline/run_daily.sh`**：把 T-010 的手工步骤串成一条命令，失败即中止并报错到简报 ｜验收：连跑 2 天，会话只需执行一条命令 + 人工审校
 - [ ] T-014 **数据回流可行性结论**（GOAL 验收第 4 条，人指定第一周内出结论，截止 2026-08-16）：查明公众号已发布文章阅读数能否经 API/后台导出/代理指标取得，写 `docs/data-return-feasibility.md` ｜验收：文档给出"可行（附取数命令实测输出）"或"不可行（附被拒证据）+ 经验证的代理指标方案"
@@ -31,6 +30,7 @@ summary: "围绕 GOAL v2（内容流水线）重排：先打通最小端到端�
 
 ## 已完成
 
+- [x] T-017 **修 WebP 配图阻塞**（2026-08-13 s2）｜验收达成：`.wechat-sync.json` 的 `uploaded_image_count: 1`（原为 0），新 media_id=-Eu-2F7MukrOEiQGhnmJqxAuSYZI65ADisZwY68OQ3cJiX2JJWo6Fgs7tMCn8yNj ｜证据：CI run 31651452747 `强制模式：删除旧草稿 → ✓ media_id=... 图片1 → 汇总：同步 1 | 失败 0`；AIWriter commit 0cb9cdc（Accept 头 + 魔数兜底 + 存量图转 JPEG）、e2af4ee（--force 越过本地 marker）｜根因与两条教训见 L-015 / L-016
 - [x] T-010 **端到端跑通第一篇**（2026-08-13 s1）｜证据：LEDGER"文章产出记录"首行 media_id=-Eu-2F7MukrOEiQGhnmJq7hfaBuqStdLXmtRD1EfGDqSvcAXDjVRAgvwb3tBLPrM；CI run 31624378522 输出 `汇总：同步 1 | 失败 0`；AIWriter commit bd8bd44（文章）→ 120d482（配图）→ 3ef5c6c/后续（封面修复）｜实测耗时：约 75 分钟（超单场预算 2.5 倍，全部超支花在 WebP 配图问题的 4 次 CI 往返上，见 L-012）
 - [x] T-011 **转换桥 `system/pipeline/to_posts.py`**（2026-08-13 s1）｜证据：脚本 109 行，实测对 `AIWriter2/articles/2026-08-08-hobby` 产出 article.md(3,960 字符)+article.html(16,814 字符)，占位符正则匹配数 1，产物通过 wechat-sync 全流程并拿到 media_id ｜遗留：封面生成尚未纳入脚本（本次手工 sips 转换），并入 T-017
 
