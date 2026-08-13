@@ -26,9 +26,11 @@ summary: "围绕 GOAL v2（内容流水线）重排：先打通最小端到端�
 
 ## 进行中
 
-（无）
+- [ ] T-019 **两日专题：AI 时代 3-5 年职业规划分析报告**（人 08-13 下达，08-15 晚场交付，每场 ≤50% 预算）｜进度：证据采集已完成（`workspace/career-2026/evidence-code.md` 从 ~1080 条自有 commit 倒推精力分布与放弃模式；`evidence-writing.md` 从 456 篇写作倒推主题聚类与未闭合命题）｜下一步：待人答复 6 项关键输入（职级与平台资源／收入底线与风险承受度／心流与耗竭分布／期望的被需要方式／家庭地域约束／外部筹码），先写 2~4 条路线的骨架与"关键假设/第一年验证动作/放弃信号"，人答复后交叉打分 ｜验收：报告存 Obsidian `Silvere/AI-Articles/`（日期前缀），简报给摘要
 
 ## 已完成
+
+- [x] T-018 **修调度挂死与锁死连锁**（2026-08-14 s1，事故驱动，非计划内）｜验收达成：看门狗实测本该跑 120s 的进程 4s 被杀且 RC=142；锁的 4 场景用生产函数体实测全对 ｜证据：`system/run.sh`（超时改 wall-clock 看门狗 + 锁加 start 时间戳与强制接管）；事故根因与可判定指标见 L-017 ｜**注意：改动对下一场（07:30）起生效，本场自身仍跑在旧版超时机制上**
 
 - [x] T-017 **修 WebP 配图阻塞**（2026-08-13 s2）｜验收达成：`.wechat-sync.json` 的 `uploaded_image_count: 1`（原为 0），新 media_id=-Eu-2F7MukrOEiQGhnmJqxAuSYZI65ADisZwY68OQ3cJiX2JJWo6Fgs7tMCn8yNj ｜证据：CI run 31651452747 `强制模式：删除旧草稿 → ✓ media_id=... 图片1 → 汇总：同步 1 | 失败 0`；AIWriter commit 0cb9cdc（Accept 头 + 魔数兜底 + 存量图转 JPEG）、e2af4ee（--force 越过本地 marker）｜根因与两条教训见 L-015 / L-016
 - [x] T-010 **端到端跑通第一篇**（2026-08-13 s1）｜证据：LEDGER"文章产出记录"首行 media_id=-Eu-2F7MukrOEiQGhnmJq7hfaBuqStdLXmtRD1EfGDqSvcAXDjVRAgvwb3tBLPrM；CI run 31624378522 输出 `汇总：同步 1 | 失败 0`；AIWriter commit bd8bd44（文章）→ 120d482（配图）→ 3ef5c6c/后续（封面修复）｜实测耗时：约 75 分钟（超单场预算 2.5 倍，全部超支花在 WebP 配图问题的 4 次 CI 往返上，见 L-012）

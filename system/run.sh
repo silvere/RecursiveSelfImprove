@@ -21,26 +21,46 @@ fi
 LOG="$ROOT/system/logs/${MODE}-$(date +%Y%m%d-%H%M%S).log"
 LOCK="$ROOT/system/.lock"
 TIMEOUT=2400
+# 前场持锁超过此时长即判定为挂死，本场强制接管（2026-08-14 s1 事故：13:30 场僵死 8h39m，
+# 锁一直被持有，把 19:30 晚场的复盘/简报/push 整场吃掉。见 LEDGER L-017）
+STALE_AFTER=$((TIMEOUT + 600))
 
 notify() {
   "$ROOT/system/notify.sh" "$1" >>"$LOG" 2>&1 || true
 }
 
 # mkdir 锁 + 陈旧锁检测（macOS 无 flock）
+# 判活不只看 pid 存在，还看持锁时长：pid 活着但超过 STALE_AFTER 属"挂死"，必须强制接管，
+# 否则一场僵死会把它之后的每一场都挡在门外（无限连锁，而非只损失一场）。
+take_lock() { mkdir "$LOCK" 2>/dev/null && echo $$ >"$LOCK/pid" && date +%s >"$LOCK/start"; }
+
 acquire_lock() {
-  if mkdir "$LOCK" 2>/dev/null; then
-    echo $$ >"$LOCK/pid"
-    return 0
-  fi
-  local oldpid
+  take_lock && return 0
+  local oldpid oldstart age
   oldpid="$(cat "$LOCK/pid" 2>/dev/null || true)"
-  if [ -n "$oldpid" ] && kill -0 "$oldpid" 2>/dev/null; then
-    echo "另一场会话运行中(pid=$oldpid)，本场退出" >>"$LOG"
+  oldstart="$(cat "$LOCK/start" 2>/dev/null || echo 0)"
+  age=$(( $(date +%s) - oldstart ))
+
+  # 先按时间判断，再按进程判断。顺序不能反：锁目录建好到 pid 落盘之间有竞态窗口，
+  # 此时 pid 读出来是空的，若先按进程判断就会把一个刚起步的正常前场误判成陈旧锁夺走。
+  if [ "$oldstart" -gt 0 ] && [ "$age" -le "$STALE_AFTER" ]; then
+    echo "另一场会话运行中(pid=${oldpid:-?}, 已运行 ${age}s)，本场退出" >>"$LOG"
     return 1
   fi
-  echo "清理陈旧锁(pid=${oldpid:-?})" >>"$LOG"
+
+  # 锁已超期（oldstart=0 则是无时间戳的旧格式锁，退化为原来的纯 pid 判断）
+  if [ -n "$oldpid" ] && kill -0 "$oldpid" 2>/dev/null; then
+    echo "前场超期未退(pid=$oldpid, 已运行 ${age}s > ${STALE_AFTER}s)，强制接管" >>"$LOG"
+    notify "⚠️ **RSI 前场会话挂死已被接管**：pid=$oldpid 持锁 ${age}s（阈值 ${STALE_AFTER}s），本场（${MODE}）已终止它并继续。请留意上一场是否留下未提交的改动。"
+    kill -TERM "$oldpid" 2>/dev/null || true
+    sleep 5
+    kill -KILL "$oldpid" 2>/dev/null || true
+    sleep 1   # 等旧进程的 EXIT trap 删完锁，再建新锁，否则新锁会被它顺手删掉
+  else
+    echo "清理陈旧锁(pid=${oldpid:-?})" >>"$LOG"
+  fi
   rm -rf "$LOCK"
-  mkdir "$LOCK" && echo $$ >"$LOCK/pid"
+  take_lock
 }
 
 acquire_lock || exit 0
@@ -81,10 +101,31 @@ else
 - **会话预算仍为约 30 分钟**：场次变密不等于单场可以摊大饼，宁可少领任务保证闭环。"
 fi
 
-# perl alarm 实现超时（macOS 无 GNU timeout；alarm 在 exec 后仍生效）
-perl -e 'alarm shift @ARGV; exec @ARGV or die "exec failed: $!"' \
-  "$TIMEOUT" claude -p "$PROMPT" --dangerously-skip-permissions >>"$LOG" 2>&1
+# 超时看门狗（macOS 无 GNU timeout）。
+# 不用 perl alarm：alarm 走的是内核定时器，Mac 合盖睡眠期间不推进——2026-08-13 13:30 场因此
+# 僵死 8h39m 才被 TIMEOUT=2400 杀掉（见 LEDGER L-017）。改为每分钟比较一次 date +%s 绝对时间戳，
+# 睡眠期间真实时间照走，机器一醒来就立刻判超时。
+START="$(date +%s)"
+claude -p "$PROMPT" --dangerously-skip-permissions >>"$LOG" 2>&1 &
+CLAUDE_PID=$!
+(
+  while kill -0 "$CLAUDE_PID" 2>/dev/null; do
+    sleep 60
+    if [ $(( $(date +%s) - START )) -gt "$TIMEOUT" ]; then
+      : >"$LOCK/timeout"
+      kill -TERM "$CLAUDE_PID" 2>/dev/null || true
+      sleep 10
+      kill -KILL "$CLAUDE_PID" 2>/dev/null || true
+      break
+    fi
+  done
+) &
+WATCHDOG_PID=$!
+wait "$CLAUDE_PID"
 RC=$?
+kill "$WATCHDOG_PID" 2>/dev/null || true
+# 看门狗留下的标记优先于被杀进程的退出码，保持"142 = 超时"的告警语义
+[ -f "$LOCK/timeout" ] && RC=142
 
 echo "=== 退出码 $RC $(date '+%F %T') ===" >>"$LOG"
 
