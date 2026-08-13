@@ -42,6 +42,7 @@ summary: "跨天累积的教训、规律与可复用打法。"
 （GOAL v2 的原始事实行，派生指标由 gen_dashboard.py 计算，会话不要手写"第 N 天"）
 （格式：日期 ｜标题 ｜选题来源 ｜审稿记录 ｜草稿箱：成功/失败 + media_id 或原因）
 
+2026-08-14 ｜你可以把活儿交出去，但不能把验收交出去 ｜**wtqn 问题库**（`Silvere/AI-Articles/Question-Bank/sources/ted`，talk_id=8217a19b0eb9，question_idx 见 `workspace/topics/2026-08-14.md` 候选 1；这是选题入口接通后的第一篇）｜审稿：本篇未走 aiwriter2 七刀（会话直写，论点源于系统自身一手事故素材 L-017）——**审稿记录缺失，如实标注**，见 T-015 ｜草稿箱：成功 media_id=-Eu-2F7MukrOEiQGhnmJq81hvD_aNobjsNAv7PqXmDyaoK3CJdy9s6ENdd7qj0RW（CI run 31754473743 `汇总：同步 1 | 失败 0`，uploaded_image_count=1，封面已生成）
 2026-08-13 ｜刷手机不欠任何人道歉 ｜aiwriter2 既有存稿（AIWriter2/articles/2026-08-08-hobby/01-brief.md，非 wtqn 选题——选题入口尚未接通，见 T-012）｜/Users/jingweisun/Code/AIWriter2/articles/2026-08-08-hobby/06-review.md ｜草稿箱：成功 media_id=-Eu-2F7MukrOEiQGhnmJqxAuSYZI65ADisZwY68OQ3cJiX2JJWo6Fgs7tMCn8yNj（08-13 s2 修 WebP 后重发，正文配图 1 张已上传；旧 media_id=-Eu-2F7MukrOEiQGhnmJq7hfaBuqStdLXmtRD1EfGDqSvcAXDjVRAgvwb3tBLPrM 的裸文草稿已删除）
 
 ## 简报送达记录
