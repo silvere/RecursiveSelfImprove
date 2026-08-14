@@ -15,6 +15,7 @@ summary: "一切外发动作在此排队，approved 后系统才执行。"
 | A-001 | 将本仓库 github.com/silvere/RecursiveSelfImprove 转为 public | GitHub Pages 免费版要求公开仓库；仓库内容为系统状态文件，无密钥（已 .gitignore 日志） | done（2026-08-10 批准并执行，`gh repo view` 返回 PUBLIC） |
 | A-003 | 修改 system/prompts/morning.md：把"自进化方法论调研"固化为早场固定环节（精确 diff 见下方 A-003 附录） | 人 2026-08-10 13:38 飞书指令"每天上午 8 点调研行业递归自我进化方法论并直接应用"。这是常设指令，写进 PLAN 会被当成一次性任务做完就消失，只有写进早场协议才真正常设。协议属法律层，故走审批 | done（人 2026-08-10 21:52 飞书"批准"；diff 已由 08-11 早场会话应用，交互会话 08-12 核对无误并补记） |
 | A-004 | 三份协议行为边界新增"调度自保"禁令（禁 launchctl unload/bootout/kickstart 任何 rsi-* 任务） | 2026-08-11 自杀式调度变更事故的直接修复（见 L-008）。法律层变更，由交互会话在事故处置中代为执行，人在场可随时否决回滚 | done（2026-08-12 交互会话执行） |
+| A-005 | evening.md 第 6 步新增"写作能力日拱一卒"：每晚基于当天审稿/产出数据落实一条写作能力具体改进（政策层直改）并记带"→ 调整"的 LEDGER 条目；无产出日改进选题库或提炼写作规律，禁止无落地的纯感想记账 | 人 2026-08-14 直接指令"写文章的能力，帮忙每天定时做一些改进"。与 GOAL v2 验收第 3 条（≥8 条迭代闭环）同向 | done（2026-08-14 交互会话按人的直接指令应用，人可否决回滚） |
 | A-002 | 让 rsi.jerryai.cn 公网可访问。执行机制经人指示改为本宅标准作业：named tunnel ingress（127.0.0.1:8906 静态服务）+ `cloudflared tunnel route dns` 建 CNAME，GitHub Pages 降级为备用镜像（silvere.github.io/RecursiveSelfImprove） | 达成 GOAL 验收标准第 1 条 | done（2026-08-10 上线，DoH 独立验证 HTTP 200；操作手册已沉淀至 Claude 记忆库 cf-jerryai-subdomain-playbook） |
 
 ---
