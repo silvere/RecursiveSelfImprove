@@ -242,11 +242,16 @@ def acceptance_auto(acceptance, ledger, inbox):
              if ok_recs else "无文章可查")
 
     # C3 迭代闭环：≥8 条关于选题/质量的教训，且每条附"→ 调整：<证据>"
-    lessons = [l for l in section(ledger, "条目").splitlines()
-               if re.match(r"\[(L|W)-\d+\]", l.strip())
-               and re.search(r"选题|质量", l) and "→ 调整：" in l]
+    # 归属靠条目自带的 #流水线 标签（写条目的会话显式判断），不靠正文出现"选题/质量"字面词——
+    # 后者是近似恒假的伪标准：20 条条目里 11 条带调整证据，字面命中却只有 1 条，交集 0（L-021）。
+    entries = [l for l in section(ledger, "条目").splitlines()
+               if re.match(r"\[(L|W)-\d+\]", l.strip())]
+    tagged = [l for l in entries if "#流水线" in l]
+    lessons = [l for l in tagged if "→ 调整：" in l]
     c3 = len(lessons) >= 8
-    c3_ev = f"选题/质量教训且带流水线调整证据 {len(lessons)}/8 条"
+    c3_ev = (f"流水线教训且带调整证据 {len(lessons)}/8 条"
+             f"（#流水线 标注 {len(tagged)} 条，其中 {len(tagged) - len(lessons)} 条未写"
+             f"「→ 调整：」故不计）")
 
     # C4 数据回流：真实数据文件优先；否则认经验证的替代方案结论文档
     data_files = [p for p in (ROOT / "workspace" / "data").glob("wechat_stats.*")
