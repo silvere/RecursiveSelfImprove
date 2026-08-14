@@ -19,9 +19,9 @@ summary: "围绕 GOAL v2（内容流水线）重排：先打通最小端到端�
 
 ## 待办
 
-- [ ] T-012 **选题入口接 wtqn**：每日从 wtqn 问题库取 3 条候选，落地为 `workspace/topics/YYYY-MM-DD.md`（含来源链接），供当日成稿选用 ｜验收：连续 2 天有候选文件且每条可回溯到 wtqn 原始条目（服务 GOAL 验收第 2 条"可溯源"）｜**进度（08-14 s2）：第 1 天已达成** — `workspace/topics/2026-08-14.md` 3 条候选均带 `talk_id/source_url/question_idx`，当日文章即取自候选 1；库真实位置是 Obsidian `Silvere/AI-Articles/Question-Bank/`（236 条），**不在 `~/Code/wtqn/data`**（该目录不存在）｜剩余：08-15 再跑一次即闭环；建议顺手脚本化取候选这一步，别每天现查路径｜已知空洞：抓取管线自 2026-04-27 无新增，`sources/podcast`、`sources/substack` 均 0 条
+- [ ] T-012 **选题入口接 wtqn**：每日从 wtqn 问题库取 3 条候选，落地为 `workspace/topics/YYYY-MM-DD.md`（含来源链接），供当日成稿选用 ｜验收：连续 2 天有候选文件且每条可回溯到 wtqn 原始条目（服务 GOAL 验收第 2 条"可溯源"）｜**进度（08-14 s2）：第 1 天已达成** — `workspace/topics/2026-08-14.md` 3 条候选均带 `talk_id/source_url/question_idx`，当日文章即取自候选 1；库真实位置是 Obsidian `Silvere/AI-Articles/Question-Bank/`（236 条），**不在 `~/Code/wtqn/data`**（该目录不存在）｜**进度（08-14 s3）：已脚本化** — `system/pipeline/pick_topics.py`，08-15 候选已自动生成（`workspace/topics/2026-08-15.md`，主候选 3 + 备选 8），会话只需补写"论点角度"一段；**剩余：08-15 当场确认该文件可用并成稿，即满足"连续 2 天"闭环**｜已知空洞：抓取管线自 2026-04-27 无新增，`sources/podcast`、`sources/substack` 均 0 条
 - [ ] T-013 **一键化 `system/pipeline/run_daily.sh`**：把 T-010 的手工步骤串成一条命令，失败即中止并报错到简报 ｜验收：连跑 2 天，会话只需执行一条命令 + 人工审校
-- [ ] T-015 **七刀审稿记录归档规范**：定义每篇文章的审稿痕迹存放路径与最小字段（选题来源／论点竞技场结论／七刀修改），使 GOAL 验收第 2 条可机器检查 ｜验收：gen_dashboard 的 C2 判定能读到该路径并给出可溯源篇数
+- [ ] T-020 **run_daily.sh 必须把七刀设为必经步骤**（08-14 s3 新增，由 T-015 检查器暴露）：`review_trace.py --ledger` 实测 2026-08-14 那篇不可溯源（会话直写未走七刀），说明"每天一篇"跑通的同时"每篇过七刀"的口径已破一次 ｜验收：run_daily.sh 在第 3 步后调 `review_trace.py <文章目录>`，不通过即中止并报错到简报，不允许产出无审稿痕迹的文章 ｜并入 T-013 实现
 
 ## 进行中
 
@@ -29,7 +29,11 @@ summary: "围绕 GOAL v2（内容流水线）重排：先打通最小端到端�
 
 ## 已完成
 
-- [x] T-014 **数据回流可行性结论**（2026-08-14 s2，早于 08-16 截止）｜**结论：官方 API 路径不可行，阻塞点是账号资质不是工程** ｜验收达成：`docs/data-return-feasibility.md` 给出明确二选一结论 + 被拒证据 + 代理方案 ｜**实测对照证据（同一 access_token 下）**：`cgi-bin/draft/count` → `{"total_count": 96}` 成功，而 `datacube/getarticlesummary`／`getarticletotal`／`getusersummary`／`getusercumulate`／`freepublish/batchget` 全部 `{"errcode":48001,"errmsg":"api unauthorized"}`——凭证有效、链路通畅，唯独数据类权限位没开，据此判定为**未认证订阅号**（官方文档载 `getarticlesummary` 限「仅认证」）｜代理方案：主通道人工周度抄录后台阅读数 → `workspace/metrics/wechat-reads.csv`（5-8 分钟/周，延迟 ≤7 天）；辅通道 Pages 镜像站接 Cloudflare Web Analytics（一次性 20 分钟，此后 0 人工，但与公众号阅读的相关性**标注为未验证推测**，需 8 周双轨数据检验）｜**已实测否决**：GitHub `repos/.../traffic/views` 返回 `count=0`，统计的是仓库页而非 Pages 站点，不能当代理指标 ｜**顺带查实**：`wechat.py::publish_draft()` 在生产链路中从未生效过——系统一直无发布权限，群发始终由人手动点击（与 GOAL 约定一致）｜**待人回答一个问题**（不影响结论，只影响未来是否值得花 300 元/年）：该公众号是企业还是个人主体？个人主体无法微信认证，此路永久封死；企业主体认证后 API 全自动打通，改造约 1 小时。主体类型 API 读不到，需登录后台「设置与开发 → 账号详情」看一眼
+- [x] T-015 **七刀审稿记录归档规范 + 可机器检查**（2026-08-14 s3）｜验收达成：`docs/review-trace-spec.md` 定义存放路径（`AIWriter2/articles/<日期-slug>/` 一个目录装全）与最小三件套（选题依据 `01-brief.md`／竞技场结论 `03-arena.md`／七刀记录 `06-review.md`，各 ≥200 字节且含内容特征）+ 终稿；检查器 `system/pipeline/review_trace.py` 可单篇跑也可 `--ledger` 全量跑；`gen_dashboard.py` 的 C2 判定改为调用同一函数（命令行与仪表盘不会两套口径）｜**存量回跑证据**：`review_trace.py --ledger` → `✗ 2026-08-14（审稿记录未指向文章目录）/ ✓ 2026-08-13 / 可溯源 1/2 篇`，RC=1；仪表盘 C2 证据行同步显示"可溯源 1/2 篇；2026-08-14 审稿记录未指向文章目录" ｜**顺带清掉 L-010 的欠账**：`check_ledger_sections()` 把"段落不存在"与"段落为空"分开，缺段打警告并让 gen_dashboard 非零退出（负例实测：删掉 `## 文章产出记录` 标题后返回 `['文章产出记录']` 并告警）｜遗留 → T-020
+
+（T-012 的脚本化部分已完成，但验收要求"连续 2 天"，故仍留在待办，见上）
+
+- [x] T-012-脚本化（子项，2026-08-14 s3）｜**脚本化证据**：`system/pipeline/pick_topics.py` 实测 `--date 2026-08-15` → `✓ workspace/topics/2026-08-15.md（主候选 3 + 备选 8，库 200 条，已排除 6 键）`；去重实测 `grep -c` 今日已用的 3 个 talk_id = **0**，不会重复选题；文件已存在时跳过并非零退出（防覆盖会话补写的角度判断）；库缺失/候选不足时明确报错而非产出空文件 ｜**刻意的分工**：脚本只做机械部分（定位库、解析、去重、排序、抄全回溯字段），"选哪条、什么角度"仍由会话判断 ｜**已知局限**：importance 高分条目里技术/科学类偏多（08-15 的 3 条主候选有 2 条是生态数据、太空数据中心，不适合本号），故备选池留到 8 条供会话替换——纯分数排序不等于选题适配 **数据回流可行性结论**（2026-08-14 s2，早于 08-16 截止）｜**结论：官方 API 路径不可行，阻塞点是账号资质不是工程** ｜验收达成：`docs/data-return-feasibility.md` 给出明确二选一结论 + 被拒证据 + 代理方案 ｜**实测对照证据（同一 access_token 下）**：`cgi-bin/draft/count` → `{"total_count": 96}` 成功，而 `datacube/getarticlesummary`／`getarticletotal`／`getusersummary`／`getusercumulate`／`freepublish/batchget` 全部 `{"errcode":48001,"errmsg":"api unauthorized"}`——凭证有效、链路通畅，唯独数据类权限位没开，据此判定为**未认证订阅号**（官方文档载 `getarticlesummary` 限「仅认证」）｜代理方案：主通道人工周度抄录后台阅读数 → `workspace/metrics/wechat-reads.csv`（5-8 分钟/周，延迟 ≤7 天）；辅通道 Pages 镜像站接 Cloudflare Web Analytics（一次性 20 分钟，此后 0 人工，但与公众号阅读的相关性**标注为未验证推测**，需 8 周双轨数据检验）｜**已实测否决**：GitHub `repos/.../traffic/views` 返回 `count=0`，统计的是仓库页而非 Pages 站点，不能当代理指标 ｜**顺带查实**：`wechat.py::publish_draft()` 在生产链路中从未生效过——系统一直无发布权限，群发始终由人手动点击（与 GOAL 约定一致）｜**待人回答一个问题**（不影响结论，只影响未来是否值得花 300 元/年）：该公众号是企业还是个人主体？个人主体无法微信认证，此路永久封死；企业主体认证后 API 全自动打通，改造约 1 小时。主体类型 API 读不到，需登录后台「设置与开发 → 账号详情」看一眼
 
 - [x] T-018 **修调度挂死与锁死连锁**（2026-08-14 s1，事故驱动，非计划内）｜验收达成：看门狗实测本该跑 120s 的进程 4s 被杀且 RC=142；锁的 4 场景用生产函数体实测全对 ｜证据：`system/run.sh`（超时改 wall-clock 看门狗 + 锁加 start 时间戳与强制接管）；事故根因与可判定指标见 L-017 ｜**注意：改动对下一场（07:30）起生效，本场自身仍跑在旧版超时机制上**
 

@@ -3,11 +3,22 @@
 import html
 import re
 import subprocess
+import sys
 import urllib.request
 from datetime import date, datetime, timedelta
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
+
+sys.path.insert(0, str(ROOT / "system" / "pipeline"))
+try:
+    import review_trace  # T-015：审稿痕迹三件套检查，C2 判定的实际执行者
+except ImportError:  # 缺模块时降级但要出声，不静默放行
+    review_trace = None
+    print("[警告] 缺 system/pipeline/review_trace.py，C2 可溯源判定降级为不通过", file=sys.stderr)
+
+
+REQUIRED_LEDGER_SECTIONS = ("条目", "文章产出记录", "简报送达记录")
 OUT = ROOT / "dashboard" / "index.html"
 
 
@@ -129,6 +140,20 @@ def section(text, title):
     return m.group(1) if m else ""
 
 
+def check_ledger_sections(ledger_text):
+    """段落缺失即报警（L-010 的教训）。
+
+    section() 对"段不存在"和"段为空"返回同一个空串——验收因此可能悄悄
+    读到空数据却一路显示正常。这里把"结构缺失"和"内容为空"分开：前者是故障，
+    必须出声；后者是合法的初始状态。返回缺失的段标题列表。
+    """
+    missing = [t for t in REQUIRED_LEDGER_SECTIONS
+               if not re.search(rf"^##\s*{re.escape(t)}\s*$", ledger_text, re.M)]
+    for t in missing:
+        print(f"[警告] LEDGER.md 缺少 `## {t}` 段——依赖该段的判定会静默读到空值", file=sys.stderr)
+    return missing
+
+
 def delivery_streak(ledger_text):
     """从 LEDGER 送达记录算连续送达天数。返回 (streak, 最近成功日期或 None)。
 
@@ -195,18 +220,25 @@ def acceptance_auto(acceptance, ledger, inbox):
     c1_ev = (f"连续产出 {streak}/14 天（最近成功 {last}，累计 {len(ok_recs)} 篇）"
              if last else "尚无成功进入草稿箱的文章")
 
-    # C2 可溯源：每篇都要有选题来源 + 审稿记录，且审稿记录路径真实存在
+    # C2 可溯源：选题来源非空，且审稿记录指向的文章目录里三件套齐全（T-015 规范）
+    # 判定下放给 review_trace.check_article——"路径存在"太松，空目录也能蒙混过关
     MISSING = {"", "—", "-", "无", "TBD"}
-    traceable = []
+    traceable, c2_gaps = [], []
     for r in ok_recs:
-        path_ok = r["review"] not in MISSING and (
-            not re.search(r"[/\\]", r["review"]) or (ROOT / r["review"]).exists()
-            or Path(r["review"]).expanduser().exists()
-        )
-        if r["source"] not in MISSING and path_ok:
+        d = review_trace.resolve(r["review"]) if review_trace else None
+        if d is None:
+            c2_gaps.append(f'{r["date"]} 审稿记录未指向文章目录')
+            continue
+        ok_trace, missing = review_trace.check_article(d)
+        if r["source"] in MISSING:
+            ok_trace, missing = False, missing + ["选题来源"]
+        if ok_trace:
             traceable.append(r)
+        else:
+            c2_gaps.append(f'{r["date"]} 缺 {"、".join(m.split("（")[0] for m in missing)}')
     c2 = bool(ok_recs) and len(traceable) == len(ok_recs)
-    c2_ev = (f"可溯源 {len(traceable)}/{len(ok_recs)} 篇（选题来源与审稿记录均非空且路径存在）"
+    c2_ev = (f"可溯源 {len(traceable)}/{len(ok_recs)} 篇"
+             + (f"；{'；'.join(c2_gaps)}" if c2_gaps else "（选题来源 + 审稿三件套齐全）")
              if ok_recs else "无文章可查")
 
     # C3 迭代闭环：≥8 条关于选题/质量的教训，且每条附"→ 调整：<证据>"
@@ -264,6 +296,7 @@ def main():
     ledger = read("LEDGER.md")
     approvals = read("human/APPROVALS.md")
     inbox = read("human/INBOX.md")
+    ledger_gaps = check_ledger_sections(ledger)
 
     goal_m = re.search(r"\*\*(.+?)\*\*", strip_frontmatter(goal))
     goal_line = goal_m.group(1) if goal_m else "（未设定目标）"
@@ -352,7 +385,9 @@ footer {{ margin-top:3rem; font-size:.8rem; color:var(--muted); }}
 """
     OUT.write_text(page, encoding="utf-8")
     print(f"OK dashboard -> {OUT}")
+    # 结构性缺失以非零退出码上浮到调用方（run.sh / 晚场），页面照常生成
+    return 1 if ledger_gaps else 0
 
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main())
