@@ -246,7 +246,10 @@ def acceptance_auto(acceptance, ledger, inbox):
     # 后者是近似恒假的伪标准：20 条条目里 11 条带调整证据，字面命中却只有 1 条，交集 0（L-021）。
     entries = [l for l in section(ledger, "条目").splitlines()
                if re.match(r"\[(L|W)-\d+\]", l.strip())]
-    tagged = [l for l in entries if "#流水线" in l]
+    # 只认**类别字段**里的标签（`[L-NNN] 日期 ｜类别 ｜内容 ｜证据` 的第 2 段）。
+    # 用整行 `in` 会把正文里提到标签名的条目也算进去——L-021 正文写了"新增可选标签 `#流水线`"，
+    # 于是它把自己点亮了，且撤标后依然命中（2026-08-15 s1 实测）。同 L-021 的病根：判定建在字符串出现上。
+    tagged = [l for l in entries if "#流水线" in (l.split("｜")[1] if "｜" in l else "")]
     lessons = [l for l in tagged if "→ 调整：" in l]
     c3 = len(lessons) >= 8
     c3_ev = (f"流水线教训且带调整证据 {len(lessons)}/8 条"
@@ -264,15 +267,44 @@ def acceptance_auto(acceptance, ledger, inbox):
     else:
         c4, c4_ev = False, "既无阅读数据文件，也无 docs/data-return-feasibility.md 结论（PLAN T-014，截止 2026-08-16）"
 
+    # 第 4 项 stat=(命中数, 样本数)，仅对"逐样本判定"的标准有意义（C2/C3）；
+    # C1 是天数进度、C4 是布尔存在性检查，无样本分布可言，给 None 而不是硬凑一个比值。
+    stats = [None, (len(traceable), len(ok_recs)), (len(lessons), len(tagged)), None]
     for i, (ok, ev) in enumerate([(c1, c1_ev), (c2, c2_ev), (c3, c3_ev), (c4, c4_ev)]):
         text = acceptance[i][1] if i < len(acceptance) else f"标准 {i + 1}"
-        results.append((ok, text, ev))
+        results.append((ok, text, ev, stats[i]))
     return results
+
+
+def discriminability_audit(results):
+    """判别力自审：检查逐样本判定的结果分布是否卡在饱和端，返回告警行列表。
+
+    动机（L-019/L-021）：判定标准本身没有被评估过。L-019 立了"新标准先对存量回跑"，
+    但只在**新建时**生效——C3 正是在建成后随账本增长悄悄变成恒假标准的，没有任何机制
+    会再看它一眼。本函数把那次性检查变成每次生成仪表盘都跑的常驻审计。
+
+    只报"分布可疑"，不判对错：全 0 可能是数据没攒够，也可能是规则根本命中不了，
+    机器区分不了这两者（L-021 的核心），所以输出的是一个必须由会话回答的问题。
+    """
+    MIN_N = 3      # 样本太少时全 0/全 1 都属正常，不报
+    ALL_HIT_N = 5  # 全命中要更多样本才值得怀疑恒真
+    out = []
+    for i, (ok, text, ev, stat) in enumerate(results):
+        if not stat:
+            continue
+        hit, total = stat
+        if total >= MIN_N and hit == 0:
+            out.append(f"C{i + 1} 命中 0/{total}：是样本还没攒够，还是这条规则根本命中不了？"
+                       f"（区分方法见 L-021：拿它去匹配一批你认定应当命中的样本）")
+        elif total >= ALL_HIT_N and hit == total:
+            out.append(f"C{i + 1} 命中 {hit}/{total} 全通过：确认它能拒掉不合格样本，"
+                       f"否则是一条恒真的伪标准（L-019）")
+    return out
 
 
 def acceptance_li(results):
     out = []
-    for ok, text, ev in results:
+    for ok, text, ev, _stat in results:
         cls = "done" if ok else "todo"
         mark = "✅" if ok else "⬜"
         out.append(
@@ -314,7 +346,10 @@ def main():
     acceptance = checklist(goal, "验收标准")
     # 2026-08-10 晚场：判定逻辑已按 GOAL v2（内容流水线）重建，见 acceptance_auto()
     acc_auto = acceptance_auto(acceptance, ledger, inbox)
-    acc_done = sum(1 for ok, _, _ in acc_auto if ok)
+    acc_done = sum(1 for ok, _, _, _ in acc_auto if ok)
+    audit = discriminability_audit(acc_auto)
+    audit_html = ("<p class='muted'>⚠ 判别力自审：" + "；".join(esc(a) for a in audit) + "</p>"
+                  if audit else "")
     todo = checklist(plan, "待办")
     doing = checklist(plan, "进行中")
 
@@ -361,6 +396,7 @@ footer {{ margin-top:3rem; font-size:.8rem; color:var(--muted); }}
 <h2>验收标准（{acc_done}/{len(acceptance)}）</h2>
 <p class="muted">GOAL v2（内容流水线）·自动判定，事实源为 LEDGER 文章产出记录与仓库文件，非人工勾选。</p>
 <ul>{acceptance_li(acc_auto)}</ul>
+{audit_html}
 
 <h2>任务队列</h2>
 <div class="stats">
@@ -390,6 +426,8 @@ footer {{ margin-top:3rem; font-size:.8rem; color:var(--muted); }}
 """
     OUT.write_text(page, encoding="utf-8")
     print(f"OK dashboard -> {OUT}")
+    for a in audit:
+        print(f"⚠ 判别力自审：{a}")
     # 结构性缺失以非零退出码上浮到调用方（run.sh / 晚场），页面照常生成
     return 1 if ledger_gaps else 0
 
