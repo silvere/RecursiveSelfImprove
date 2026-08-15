@@ -8,3 +8,6 @@
 2026-08-15T17:31:27Z gate=pass cmd=check dir=/Users/jingweisun/Code/AIWriter2/articles/2026-08-15-falsification
 2026-08-15T17:34:47Z gate=fail cmd=check dir=/tmp/rsi-verify-17697
 2026-08-15T17:34:47Z gate=fail cmd=ship dir=/tmp/rsi-verify-17697
+2026-08-15T23:40:09Z gate=pass cmd=check dir=/Users/jingweisun/Code/AIWriter2/articles/2026-08-16-agent-permission
+2026-08-15T23:40:16Z gate=pass cmd=ship dir=/Users/jingweisun/Code/AIWriter2/articles/2026-08-16-agent-permission
+2026-08-15T23:40:22Z shipped dir=/Users/jingweisun/Code/AIWriter2/articles/2026-08-16-agent-permission date=2026-08-16 slug=agent-permission commit=bf472bf push=1

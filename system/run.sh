@@ -39,12 +39,18 @@ notify() {
 
 # 本场收尾：把结果落到 RUNLOG。rc 之外还记两件下一场抢救时必须知道的事——
 # journal 写没写（判定"活干了但没交付"），工作区脏不脏（判定"有没有未提交的成果要救"）。
+# phase=start 在开场落、phase=end 在收尾落。为什么必须有 start：
+# 只落 end 时，一场若在收尾前被硬杀（kill -9/断电/休眠）就什么都不留，末行仍是更早那场的记录，
+# 于是下一场把"已经处理过的旧故障"重报一遍，同时真正的新丢场被完全掩盖。
+# 2026-08-16 s2 实证：s1 跑在尚无 record_run 的旧版上（新代码只对下一场生效），一行未落，
+# s2 开场因此收到 08-15 evening 的陈旧告警 + 假的"排班缺口 11 小时"（见 L-026）。
+# 有了 start，"末行"恒等于"最近真正启动过的那一场"，两种情形才分得开。
 record_run() {
-  local rc="$1" jrn="${2:-none}" dirty jw
+  local rc="$1" jrn="${2:-none}" phase="${3:-end}" dirty jw
   dirty="$(git -C "$ROOT" status --porcelain 2>/dev/null | wc -l | tr -d ' ')"
   if [ "$jrn" != "none" ] && [ -f "$ROOT/$jrn" ]; then jw=1; else jw=0; fi
-  printf '%s t=%s mode=%s rc=%s journal=%s journal_written=%s dirty=%s log=%s\n' \
-    "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$(date +%s)" "$MODE" "$rc" "$jrn" "$jw" "${dirty:-0}" "${LOG#$ROOT/}" \
+  printf '%s t=%s mode=%s phase=%s rc=%s journal=%s journal_written=%s dirty=%s log=%s\n' \
+    "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$(date +%s)" "$MODE" "$phase" "$rc" "$jrn" "$jw" "${dirty:-0}" "${LOG#$ROOT/}" \
     >>"$RUNLOG" 2>/dev/null || true
 }
 
@@ -52,21 +58,32 @@ record_run() {
 # 有异常则输出一段文字，由调用方注入本场 PROMPT；无异常输出空。
 session_alert() {
   [ -s "$RUNLOG" ] || return 0
-  local last rc jw dirty ts jrn gap alerts=""
+  local last rc jw dirty dirty_now ts jrn phase gap alerts=""
   last="$(tail -n 1 "$RUNLOG")"
   rc="$(printf '%s' "$last"    | sed -n 's/.* rc=\([0-9-]*\) .*/\1/p')"
   jw="$(printf '%s' "$last"    | sed -n 's/.*journal_written=\([0-9]*\).*/\1/p')"
   dirty="$(printf '%s' "$last" | sed -n 's/.* dirty=\([0-9]*\).*/\1/p')"
   ts="$(printf '%s' "$last"    | sed -n 's/.* t=\([0-9]*\) .*/\1/p')"
   jrn="$(printf '%s' "$last"   | sed -n 's/.* journal=\([^ ]*\).*/\1/p')"
+  phase="$(printf '%s' "$last" | sed -n 's/.* phase=\([a-z]*\) .*/\1/p')"
   gap=$(( $(date +%s) - ${ts:-0} ))
+  # dirty 是"上一场结束当时"的快照，不等于现在还脏——后续场次可能已抢救并提交。
+  # 只有现在仍然脏，才值得让本场停下来先抢救；否则如实说明已被处置，不重复报警。
+  dirty_now="$(git -C "$ROOT" status --porcelain 2>/dev/null | wc -l | tr -d ' ')"
+
+  # 末行是 start 且不是本场自己 = 那一场开了场却没能收尾（被硬杀/断电/休眠），属硬丢场
+  [ "${phase:-end}" = "start" ] && alerts="${alerts}
+- **上一场只开场未收尾**（记录停在 \`phase=start\`）：run.sh 进程被硬杀（kill -9／断电／休眠），连退出码都没留下。查 \`${last##*log=}\` 的最后一行确认它干到哪一步，未提交的成果按下一条处理。"
 
   [ "${rc:-0}" != "0" ] && alerts="${alerts}
 - **上一场非零退出**（rc=${rc}）：先读它的日志尾部（\`${last##*log=}\`）判断是崩在哪一步。"
   [ "${jw:-1}" != "1" ] && alerts="${alerts}
 - **上一场没写 journal**（应写 \`${jrn}\`）：活可能干了一半就崩了，属丢场，必须补记（标明是本场追认）并在 LEDGER 记一条。"
-  [ "${dirty:-0}" != "0" ] && alerts="${alerts}
-- **上一场结束时工作区有 ${dirty} 处未提交改动**：先 \`git status\` + \`git diff\` 看清那是不是上一场没来得及交付的成果，**先抢救再干新活**；确认无用才丢弃。"
+  if [ "${dirty:-0}" != "0" ] && [ "${dirty_now:-0}" != "0" ]; then alerts="${alerts}
+- **上一场结束时工作区有 ${dirty} 处未提交改动，且现在仍有 ${dirty_now} 处**：先 \`git status\` + \`git diff\` 看清那是不是上一场没来得及交付的成果，**先抢救再干新活**；确认无用才丢弃。"
+  elif [ "${dirty:-0}" != "0" ]; then alerts="${alerts}
+- （上一场遗留的 ${dirty} 处改动**现已提交，无需抢救**——工作区当前 clean，此条仅作说明。）"
+  fi
   [ -n "${ts:-}" ] && [ "$gap" -gt "$GAP_ALERT" ] && alerts="${alerts}
 - **排班缺口 $((gap / 3600)) 小时**（上一条运行记录到现在，正常应 ≤6 小时）：中间有场次根本没启动（关机/休眠/plist 失效），核对 \`launchctl list | grep rsi\` 并在 journal 记明丢了几场。"
 
@@ -162,6 +179,9 @@ fi
 # 不用 perl alarm：alarm 走的是内核定时器，Mac 合盖睡眠期间不推进——2026-08-13 13:30 场因此
 # 僵死 8h39m 才被 TIMEOUT=2400 杀掉（见 LEDGER L-017）。改为每分钟比较一次 date +%s 绝对时间戳，
 # 睡眠期间真实时间照走，机器一醒来就立刻判超时。
+# 开场记录必须落在 session_alert 之后（上面构造 PROMPT 时已调用），否则它会读到本场自己这一行
+[ "$MODE" != "smoke" ] && record_run 0 "${JOURNAL:-none}" start
+
 START="$(date +%s)"
 claude -p "$PROMPT" --dangerously-skip-permissions >>"$LOG" 2>&1 &
 CLAUDE_PID=$!
