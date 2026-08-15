@@ -9,8 +9,8 @@ cd "$ROOT" || exit 1
 
 MODE="${1:-}"
 case "$MODE" in
-  morning|evening|weekly|smoke) ;;
-  *) echo "用法: run.sh <morning|evening|weekly|smoke>" >&2; exit 2 ;;
+  morning|evening|weekly|smoke|selfcheck) ;;
+  *) echo "用法: run.sh <morning|evening|weekly|smoke|selfcheck>" >&2; exit 2 ;;
 esac
 
 # 周日的晚场自动升级为周审（少一个 plist，少一个概念）
@@ -21,6 +21,14 @@ fi
 LOG="$ROOT/system/logs/${MODE}-$(date +%Y%m%d-%H%M%S).log"
 LOCK="$ROOT/system/.lock"
 TIMEOUT=2400
+# 每场跑完在本地留一行运行记录，下一场开场必读。
+# 为什么不能只靠飞书告警：2026-08-15 的 s3 与 pm 两场都因本机 DNS 中断而失败，
+# 而告警渠道（飞书）与失败原因共享同一条依赖——网络一断，告警本身也发不出去，
+# 故障 100% 静默，s3 干完的活留在工作区未提交、晚场整场蒸发都无人知晓（见 L-025）。
+# 仓库文件 + 下一场的注入参数，是本系统唯一不依赖网络的告警信道。
+RUNLOG="$ROOT/workspace/session-runs.log"
+# 排班每 6 小时一场；超过此间隔没有任何运行记录，说明中间有场次根本没启动（关机/休眠/plist 掉了）
+GAP_ALERT=$((7 * 3600))
 # 前场持锁超过此时长即判定为挂死，本场强制接管（2026-08-14 s1 事故：13:30 场僵死 8h39m，
 # 锁一直被持有，把 19:30 晚场的复盘/简报/push 整场吃掉。见 LEDGER L-017）
 STALE_AFTER=$((TIMEOUT + 600))
@@ -28,6 +36,54 @@ STALE_AFTER=$((TIMEOUT + 600))
 notify() {
   "$ROOT/system/notify.sh" "$1" >>"$LOG" 2>&1 || true
 }
+
+# 本场收尾：把结果落到 RUNLOG。rc 之外还记两件下一场抢救时必须知道的事——
+# journal 写没写（判定"活干了但没交付"），工作区脏不脏（判定"有没有未提交的成果要救"）。
+record_run() {
+  local rc="$1" jrn="${2:-none}" dirty jw
+  dirty="$(git -C "$ROOT" status --porcelain 2>/dev/null | wc -l | tr -d ' ')"
+  if [ "$jrn" != "none" ] && [ -f "$ROOT/$jrn" ]; then jw=1; else jw=0; fi
+  printf '%s t=%s mode=%s rc=%s journal=%s journal_written=%s dirty=%s log=%s\n' \
+    "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$(date +%s)" "$MODE" "$rc" "$jrn" "$jw" "${dirty:-0}" "${LOG#$ROOT/}" \
+    >>"$RUNLOG" 2>/dev/null || true
+}
+
+# 开场自检：上一场是否异常（非零退出 / 活干了没写 journal / 排班缺口）。
+# 有异常则输出一段文字，由调用方注入本场 PROMPT；无异常输出空。
+session_alert() {
+  [ -s "$RUNLOG" ] || return 0
+  local last rc jw dirty ts jrn gap alerts=""
+  last="$(tail -n 1 "$RUNLOG")"
+  rc="$(printf '%s' "$last"    | sed -n 's/.* rc=\([0-9-]*\) .*/\1/p')"
+  jw="$(printf '%s' "$last"    | sed -n 's/.*journal_written=\([0-9]*\).*/\1/p')"
+  dirty="$(printf '%s' "$last" | sed -n 's/.* dirty=\([0-9]*\).*/\1/p')"
+  ts="$(printf '%s' "$last"    | sed -n 's/.* t=\([0-9]*\) .*/\1/p')"
+  jrn="$(printf '%s' "$last"   | sed -n 's/.* journal=\([^ ]*\).*/\1/p')"
+  gap=$(( $(date +%s) - ${ts:-0} ))
+
+  [ "${rc:-0}" != "0" ] && alerts="${alerts}
+- **上一场非零退出**（rc=${rc}）：先读它的日志尾部（\`${last##*log=}\`）判断是崩在哪一步。"
+  [ "${jw:-1}" != "1" ] && alerts="${alerts}
+- **上一场没写 journal**（应写 \`${jrn}\`）：活可能干了一半就崩了，属丢场，必须补记（标明是本场追认）并在 LEDGER 记一条。"
+  [ "${dirty:-0}" != "0" ] && alerts="${alerts}
+- **上一场结束时工作区有 ${dirty} 处未提交改动**：先 \`git status\` + \`git diff\` 看清那是不是上一场没来得及交付的成果，**先抢救再干新活**；确认无用才丢弃。"
+  [ -n "${ts:-}" ] && [ "$gap" -gt "$GAP_ALERT" ] && alerts="${alerts}
+- **排班缺口 $((gap / 3600)) 小时**（上一条运行记录到现在，正常应 ≤6 小时）：中间有场次根本没启动（关机/休眠/plist 失效），核对 \`launchctl list | grep rsi\` 并在 journal 记明丢了几场。"
+
+  [ -n "$alerts" ] || return 0
+  printf '%s' "
+## ⚠️ 上一场健康自检（run.sh 自动注入，优先于本场原定计划）
+
+上一条运行记录：\`${last}\`
+${alerts}
+
+**处理完这些再开始本场的正常流程**；若判定无需处理，也要在 journal 写明判断依据。"
+}
+
+if [ "$MODE" = "selfcheck" ]; then
+  out="$(session_alert)"
+  if [ -n "$out" ]; then printf '%s\n' "$out"; exit 1; else echo "✓ 上一场运行记录正常"; exit 0; fi
+fi
 
 # mkdir 锁 + 陈旧锁检测（macOS 无 flock）
 # 判活不只看 pid 存在，还看持锁时长：pid 活着但超过 STALE_AFTER 属"挂死"，必须强制接管，
@@ -66,7 +122,7 @@ acquire_lock() {
 acquire_lock || exit 0
 trap 'rm -rf "$LOCK"' EXIT
 # 被外部终止（launchctl 操作/关机）时先告警再退出——2026-08-11 事故曾静默死亡
-trap 'notify "⚠️ **RSI ${MODE} 场会话被外部终止**（SIGTERM）。若非人为关机，请检查是否有会话违反调度自保禁令。日志：${LOG#$ROOT/}"; exit 143' TERM
+trap 'record_run 143 "${JOURNAL:-none}"; notify "⚠️ **RSI ${MODE} 场会话被外部终止**（SIGTERM）。若非人为关机，请检查是否有会话违反调度自保禁令。日志：${LOG#$ROOT/}"; exit 143' TERM
 
 echo "=== RSI $MODE 场 $(date '+%F %T') ===" >>"$LOG"
 
@@ -98,7 +154,8 @@ else
 - **排班**：每 6 小时一场。当日 01:30 / 07:30 / 13:30 走工作场协议（morning.md），19:30 走晚场收尾协议（evening.md，含复盘/简报/push；周日自动升级周审）。
 - **本场 journal 文件名**：\`${JOURNAL}\`。协议正文里写的默认文件名（-am.md）以此为准替换。
 - **恢复上下文时**：先读今天已有的工作场 journal（\`journal/${TODAY}-s1.md\` / \`-s2.md\` / \`-s3.md\`，存在哪些取决于今天已跑过几场），再读最近一份 \`-pm.md\`。同一天后面的场次要接着前面的场次干，不要重做已完成的事。
-- **会话预算仍为约 30 分钟**：场次变密不等于单场可以摊大饼，宁可少领任务保证闭环。"
+- **会话预算仍为约 30 分钟**：场次变密不等于单场可以摊大饼，宁可少领任务保证闭环。
+$(session_alert)"
 fi
 
 # 超时看门狗（macOS 无 GNU timeout）。
@@ -128,6 +185,9 @@ kill "$WATCHDOG_PID" 2>/dev/null || true
 [ -f "$LOCK/timeout" ] && RC=142
 
 echo "=== 退出码 $RC $(date '+%F %T') ===" >>"$LOG"
+
+# 先落本地运行记录，再发飞书告警：网络故障时后者必然失败，前者是下一场唯一能看到的信号
+[ "$MODE" != "smoke" ] && record_run "$RC" "${JOURNAL:-none}"
 
 if [ "$RC" -ne 0 ]; then
   if [ "$RC" -eq 142 ]; then

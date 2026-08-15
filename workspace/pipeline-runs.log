@@ -1,0 +1,10 @@
+2026-08-15T05:32:35Z gate=pass cmd=check dir=/Users/jingweisun/Code/AIWriter2/articles/2026-08-15-falsification
+2026-08-15T05:32:35Z gate=fail cmd=check dir=/tmp/rsi-badart
+2026-08-15T05:32:40Z gate=fail cmd=ship dir=/tmp/rsi-badart
+2026-08-15T05:32:40Z gate=bypassed cmd=ship dir=/tmp/rsi-badart reason=s3脚本负例测试
+2026-08-15T05:32:47Z gate=pass cmd=ship dir=/Users/jingweisun/Code/AIWriter2/articles/2026-08-15-falsification
+2026-08-15T05:33:09Z gate=pass cmd=ship dir=/Users/jingweisun/Code/AIWriter2/articles/2026-08-15-falsification
+2026-08-15T05:33:12Z shipped dir=/Users/jingweisun/Code/AIWriter2/articles/2026-08-15-falsification date=2026-08-15 slug=_pipeline-selftest commit=10d0ccc push=0
+2026-08-15T17:31:27Z gate=pass cmd=check dir=/Users/jingweisun/Code/AIWriter2/articles/2026-08-15-falsification
+2026-08-15T17:34:47Z gate=fail cmd=check dir=/tmp/rsi-verify-17697
+2026-08-15T17:34:47Z gate=fail cmd=ship dir=/tmp/rsi-verify-17697
