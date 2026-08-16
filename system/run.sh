@@ -66,12 +66,31 @@ record_run() {
     >>"$RUNLOG" 2>/dev/null || true
 }
 
+# 取"最后一条已经不可能还在跑的记录"。为什么不能直接 tail -1：
+# 本场自己的 start 行必须跳过。开场注入路径靠调用顺序规避（record_run start 排在 session_alert 之后，
+# 见文件末尾），但 selfcheck 是独立入口——会话中途手工跑时末行恒为本场自己的 start，
+# 于是"只开场未收尾"+"没写 journal"两条必响。这与 L-027 的 dirty 恒真同形：把监测者自己算成了症状。
+# 2026-08-16 pm 实证：s3 把 selfcheck 写成交接验收命令、STRATEGY 策略 8 又把
+# "正常时应输出 ✓ 上一场运行记录正常"写成反向体检指标，而该指标在会话中途结构上无法达成。
+# 判据只有一条（不引入 PID/白名单）：start 行距今不足 TIMEOUT（看门狗上限）就还没到该收尾的时刻，
+# 判它"被硬杀"没有依据。排班每 6 小时一场 > TIMEOUT，故真丢场仍会被下一场如常捕获，延迟不变。
+last_settled() {
+  awk -v now="$(date +%s)" -v to="$TIMEOUT" '
+    { ph="end"; ts=0
+      if (match($0, /phase=[a-z]+/)) ph=substr($0, RSTART+6, RLENGTH-6)
+      if (match($0, / t=[0-9]+/))    ts=substr($0, RSTART+3, RLENGTH-3)+0
+      if (ph=="start" && now-ts < to) next
+      keep=$0 }
+    END { if (keep != "") print keep }' "$RUNLOG"
+}
+
 # 开场自检：上一场是否异常（非零退出 / 活干了没写 journal / 排班缺口）。
 # 有异常则输出一段文字，由调用方注入本场 PROMPT；无异常输出空。
 session_alert() {
   [ -s "$RUNLOG" ] || return 0
   local last rc jw dirty dirty_now ts jrn phase gap alerts=""
-  last="$(tail -n 1 "$RUNLOG")"
+  last="$(last_settled)"
+  [ -n "$last" ] || return 0
   rc="$(printf '%s' "$last"    | sed -n 's/.* rc=\([0-9-]*\) .*/\1/p')"
   jw="$(printf '%s' "$last"    | sed -n 's/.*journal_written=\([0-9]*\).*/\1/p')"
   dirty="$(printf '%s' "$last" | sed -n 's/.* dirty=\([0-9]*\).*/\1/p')"
@@ -83,7 +102,7 @@ session_alert() {
   # 只有现在仍然脏，才值得让本场停下来先抢救；否则如实说明已被处置，不重复报警。
   dirty_now="$(dirty_count)"
 
-  # 末行是 start 且不是本场自己 = 那一场开了场却没能收尾（被硬杀/断电/休眠），属硬丢场
+  # 记录停在 start 且已过 TIMEOUT（本场自己那行已由 last_settled 排除）= 开了场没能收尾，属硬丢场
   [ "${phase:-end}" = "start" ] && alerts="${alerts}
 - **上一场只开场未收尾**（记录停在 \`phase=start\`）：run.sh 进程被硬杀（kill -9／断电／休眠），连退出码都没留下。查 \`${last##*log=}\` 的最后一行确认它干到哪一步，未提交的成果按下一条处理。"
 
