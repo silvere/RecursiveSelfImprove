@@ -37,6 +37,18 @@ notify() {
   "$ROOT/system/notify.sh" "$1" >>"$LOG" 2>&1 || true
 }
 
+# 工作区里"真实成果"的未提交改动数。刻意排除两个由系统自己生成的文件：
+#   workspace/session-runs.log —— record_run 的 end 行写在本场 commit 之后，结构上不可能被本场提交；
+#   dashboard/index.html       —— gen_dashboard.py 每场重新生成，丢了下一场再生成一遍，零损失。
+# 不排除时 dirty 恒 ≥1，"上一场有未提交成果，先抢救再干新活"的告警每场必响 = 等于没有告警，
+# 且 L-026 刚加的"现已提交，无需抢救"降级分支（要求 dirty_now=0）永远走不到，形同死代码。
+# 2026-08-16 s3 实证：本场收到该告警，全量 2 处（session-runs.log + dashboard/index.html），
+# 排除后为 0——真成果一处也没有，抢救判断纯属空耗。
+dirty_count() {
+  git -C "$ROOT" status --porcelain -- . \
+    ':(exclude)workspace/session-runs.log' ':(exclude)dashboard/index.html' 2>/dev/null | wc -l | tr -d ' '
+}
+
 # 本场收尾：把结果落到 RUNLOG。rc 之外还记两件下一场抢救时必须知道的事——
 # journal 写没写（判定"活干了但没交付"），工作区脏不脏（判定"有没有未提交的成果要救"）。
 # phase=start 在开场落、phase=end 在收尾落。为什么必须有 start：
@@ -47,7 +59,7 @@ notify() {
 # 有了 start，"末行"恒等于"最近真正启动过的那一场"，两种情形才分得开。
 record_run() {
   local rc="$1" jrn="${2:-none}" phase="${3:-end}" dirty jw
-  dirty="$(git -C "$ROOT" status --porcelain 2>/dev/null | wc -l | tr -d ' ')"
+  dirty="$(dirty_count)"
   if [ "$jrn" != "none" ] && [ -f "$ROOT/$jrn" ]; then jw=1; else jw=0; fi
   printf '%s t=%s mode=%s phase=%s rc=%s journal=%s journal_written=%s dirty=%s log=%s\n' \
     "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$(date +%s)" "$MODE" "$phase" "$rc" "$jrn" "$jw" "${dirty:-0}" "${LOG#$ROOT/}" \
@@ -69,7 +81,7 @@ session_alert() {
   gap=$(( $(date +%s) - ${ts:-0} ))
   # dirty 是"上一场结束当时"的快照，不等于现在还脏——后续场次可能已抢救并提交。
   # 只有现在仍然脏，才值得让本场停下来先抢救；否则如实说明已被处置，不重复报警。
-  dirty_now="$(git -C "$ROOT" status --porcelain 2>/dev/null | wc -l | tr -d ' ')"
+  dirty_now="$(dirty_count)"
 
   # 末行是 start 且不是本场自己 = 那一场开了场却没能收尾（被硬杀/断电/休眠），属硬丢场
   [ "${phase:-end}" = "start" ] && alerts="${alerts}
