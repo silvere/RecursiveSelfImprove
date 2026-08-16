@@ -11,3 +11,6 @@
 2026-08-15T23:40:09Z gate=pass cmd=check dir=/Users/jingweisun/Code/AIWriter2/articles/2026-08-16-agent-permission
 2026-08-15T23:40:16Z gate=pass cmd=ship dir=/Users/jingweisun/Code/AIWriter2/articles/2026-08-16-agent-permission
 2026-08-15T23:40:22Z shipped dir=/Users/jingweisun/Code/AIWriter2/articles/2026-08-16-agent-permission date=2026-08-16 slug=agent-permission commit=bf472bf push=1
+2026-08-16T23:38:13Z gate=pass cmd=check dir=/Users/jingweisun/Code/AIWriter2/articles/2026-08-17-hidden-solutions
+2026-08-16T23:38:19Z gate=pass cmd=ship dir=/Users/jingweisun/Code/AIWriter2/articles/2026-08-17-hidden-solutions
+2026-08-16T23:38:25Z shipped dir=/Users/jingweisun/Code/AIWriter2/articles/2026-08-17-hidden-solutions date=2026-08-17 slug=hidden-solutions commit=2e0e3e7 push=1

@@ -30,7 +30,11 @@ summary: "围绕 GOAL v2（内容流水线）重排：先打通最小端到端�
 
 ## 进行中
 
-- [ ] T-013 **一键化 `system/pipeline/run_daily.sh`**：把 T-010 的手工步骤串成一条命令，失败即中止并报错到简报 ｜验收：连跑 2 天，会话只需执行一条命令 + 人工审校 ｜**进度（08-15 s3 建成，08-16 s1 复核）**：脚本已落地（128 行，prep/check/ship 三子命令），自测六项全过、本场复核五项相符一项未复核（见 journal/2026-08-15-s3.md 表格）｜**剩余就是"用它跑真文章"**：08-16、08-17 两天的成稿必须走 `run_daily.sh ship`，而不是会话手敲步骤——自测通过不等于验收通过，验收口径是连跑 2 天真文章 ｜**第 1 天达成（08-16 s2）**：今日文章全程由 `run_daily.sh ship` 交付，会话未手敲任何一步——`check` → `✓ RC=0`；`ship` 依次产出 `AIWriter/posts/2026-08-16/agent-permission/article.md`(3717 字符) + `article.html`(17,080 字符) → worktree 提交 `bf472bf` → 推送 main → CI 配图（run 31915333957 `完成：1 处已填充`）→ CI 同步草稿箱（run 31915386837 `汇总：同步 1 | 失败 0`，media_id=-Eu-2F7MukrOEiQGhnmJq-vmj1Y01vXERTMo8VTDZJMyCotUztVqKC9hkWwAgKYq）｜**剩 08-17 一天**，走完即验收达成
+（本场（08-17 s2）T-013 验收达成后暂空。下一场从"待办"段的 W 系列里领，**优先 T-021 题图**。）
+
+## 已完成（本场新增）
+
+- [x] T-013 **一键化 `system/pipeline/run_daily.sh`**：把 T-010 的手工步骤串成一条命令，失败即中止并报错到简报 ｜验收：连跑 2 天，会话只需执行一条命令 + 人工审校 ｜**进度（08-15 s3 建成，08-16 s1 复核）**：脚本已落地（128 行，prep/check/ship 三子命令），自测六项全过、本场复核五项相符一项未复核（见 journal/2026-08-15-s3.md 表格）｜**剩余就是"用它跑真文章"**：08-16、08-17 两天的成稿必须走 `run_daily.sh ship`，而不是会话手敲步骤——自测通过不等于验收通过，验收口径是连跑 2 天真文章 ｜**第 1 天达成（08-16 s2）**：今日文章全程由 `run_daily.sh ship` 交付，会话未手敲任何一步——`check` → `✓ RC=0`；`ship` 依次产出 `AIWriter/posts/2026-08-16/agent-permission/article.md`(3717 字符) + `article.html`(17,080 字符) → worktree 提交 `bf472bf` → 推送 main → CI 配图（run 31915333957 `完成：1 处已填充`）→ CI 同步草稿箱（run 31915386837 `汇总：同步 1 | 失败 0`，media_id=-Eu-2F7MukrOEiQGhnmJq-vmj1Y01vXERTMo8VTDZJMyCotUztVqKC9hkWwAgKYq）｜**✅ 验收达成（2026-08-17 s2，第 2 天）**：《「没救了」这三个字，混着三件完全不同的事》全程 `run_daily.sh ship`，会话未手敲任何一步——`check` → `✓ RC=0`；`ship` → `article.md`(2,671 字符) + `article.html`(16,078 字符) → AIWriter commit `2e0e3e7` → push main → CI 配图（run 31979698196 success）→ CI 同步草稿箱（run 31979756430 `汇总：同步 1 | 去重补标记 0 | 跳过 0 | 失败 0`，media_id=-Eu-2F7MukrOEiQGhnmJq-6D2W3bwNyzMVvlkR90_UR4YT036kiinsvmRoOep_xE）｜**连跑 2 天真文章（08-16、08-17）的验收口径已满足**
 
 ## 已完成
 
