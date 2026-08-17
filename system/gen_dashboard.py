@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """RSI 仪表盘生成器：读仓库状态文件，渲染 dashboard/index.html。仅用 stdlib。"""
+import csv
 import html
 import re
 import subprocess
@@ -198,6 +199,28 @@ def article_records(ledger_text):
     return sorted(recs, key=lambda r: r["date"])
 
 
+def c4_data_return():
+    """GOAL v2 验收第 4 条：阅读数据回流通道。
+
+    判定只认 workspace/metrics/wechat-reads.csv 里**至少一行填了实测 reads**。
+    刻意不认 docs/data-return-feasibility.md 这类系统自产文档——见调用处注释。
+    """
+    csv_path = ROOT / "workspace" / "metrics" / "wechat-reads.csv"
+    if not csv_path.exists():
+        return False, "通道文件 workspace/metrics/wechat-reads.csv 不存在（PLAN T-014）"
+    rows = [r for r in csv.DictReader(csv_path.read_text(encoding="utf-8").splitlines())]
+    with_reads = [r for r in rows if (r.get("reads") or "").strip().isdigit()]
+    if with_reads:
+        latest = max((r.get("recorded_at") or "") for r in with_reads)
+        return True, (f"通道已建成且有实测数据：{len(with_reads)}/{len(rows)} 篇有阅读数"
+                      f"，最近抄录 {latest or '日期未填'}")
+    published = [r for r in rows if (r.get("published") or "").strip().lower() == "y"]
+    return False, (f"通道已建成（{csv_path.relative_to(ROOT)}，{len(rows)} 篇在册）但"
+                   f"**0 行有实测 reads**；已标记为已发布的 {len(published)} 篇——"
+                   f"官方 API 路径已证伪（个人主体，见 docs/data-return-feasibility.md），"
+                   f"缺的是人从后台抄一次数")
+
+
 def acceptance_auto(acceptance, ledger, inbox):
     """对 GOAL v2（内容流水线）验收标准逐条自动判定，返回 [(ok, 标准文本, 证据)]。
 
@@ -256,16 +279,12 @@ def acceptance_auto(acceptance, ledger, inbox):
              f"（#流水线 标注 {len(tagged)} 条，其中 {len(tagged) - len(lessons)} 条未写"
              f"「→ 调整：」故不计）")
 
-    # C4 数据回流：真实数据文件优先；否则认经验证的替代方案结论文档
-    data_files = [p for p in (ROOT / "workspace" / "data").glob("wechat_stats.*")
-                  if p.is_file() and p.stat().st_size > 0] if (ROOT / "workspace" / "data").exists() else []
-    doc = ROOT / "docs" / "data-return-feasibility.md"
-    if data_files:
-        c4, c4_ev = True, f"阅读数据文件 {data_files[0].name}（{data_files[0].stat().st_size} 字节）"
-    elif doc.exists() and "结论：" in doc.read_text(encoding="utf-8", errors="replace"):
-        c4, c4_ev = True, "无直采通道，采用 docs/data-return-feasibility.md 中的替代方案（含结论）"
-    else:
-        c4, c4_ev = False, "既无阅读数据文件，也无 docs/data-return-feasibility.md 结论（PLAN T-014，截止 2026-08-16）"
+    # C4 数据回流：只认表里有实测读数，不认自产文档。
+    # 2026-08-17 pm 收紧：旧口径「docs/data-return-feasibility.md 存在且含『结论：』」→ True，
+    # 等于一份系统自己写的可行性文档就能点亮一条验收标准（W-008／T-024 点名的自我确认闭环，
+    # 已发生 2 次）。GOAL 原文要求的是「建成记录通道」且替代方案须「经过验证」——
+    # 一张一个真实数字都没有的表是通道，不是数据。
+    c4, c4_ev = c4_data_return()
 
     # 第 4 项 stat=(命中数, 样本数)，仅对"逐样本判定"的标准有意义（C2/C3）；
     # C1 是天数进度、C4 是布尔存在性检查，无样本分布可言，给 None 而不是硬凑一个比值。
