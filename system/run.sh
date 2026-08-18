@@ -66,6 +66,44 @@ record_run() {
     >>"$RUNLOG" 2>/dev/null || true
 }
 
+# 开跑前检查人的 Claude 登录凭证还能撑多久。
+# 2026-08-17 s1 与 2026-08-18 s1/s2/s3 共 4 场在 8~13 秒内 rc=1 空跑，日志尾部同一行
+# `401 OAuth access token has expired`。run.sh 当时确实发了告警，但写的是通用的
+# "异常退出(exit=1)"——人看不出这条要他去终端重新登录，于是一天撞同一堵墙三次。
+# refreshToken 约 48 小时到期且只有人交互登录才续，这是本系统唯一机器无法自愈的故障。
+# **刻意不做的事：不因预检失败而跳过本场。** 按可逆性仲裁——误判跳过 = 白丢一场（不可逆），
+# 多发一条告警 = 一条重复消息（可逆）。预检只改告警内容，不夺会话的执行权。
+CREDS_STAMP="$ROOT/workspace/.creds-warned"
+creds_preflight() {
+  local out status remain expires epoch level stamp
+  out="$(python3 "$ROOT/system/creds_check.py" 2>>"$LOG")" || true
+  [ -n "$out" ] || return 0
+  status="${out%%|*}"
+  remain="$(printf '%s' "$out" | cut -d'|' -f2)"
+  expires="$(printf '%s' "$out" | cut -d'|' -f3)"
+  epoch="$(printf '%s' "$out" | cut -d'|' -f4)"
+  echo "凭证预检: $out" >>"$LOG"
+  case "$status" in
+    OK|UNKNOWN) return 0 ;;   # UNKNOWN 一律闭嘴：误报会训练人忽略这条通道
+    WARN)   level=warn ;;
+    URGENT|EXPIRED) level=urgent ;;
+    *) return 0 ;;
+  esac
+  # 每个凭证周期每个级别只告警一次，否则每 6 小时重复一条，人会当噪音屏蔽
+  stamp="$(cat "$CREDS_STAMP" 2>/dev/null || true)"
+  [ "$stamp" = "${epoch}:${level}" ] && return 0
+  printf '%s:%s' "$epoch" "$level" >"$CREDS_STAMP" 2>/dev/null || true
+  if [ "$status" = "EXPIRED" ]; then
+    notify "🔴 **RSI 停摆：你的 Claude 登录已过期**（过期于 ${expires}）
+从现在起每 6 小时的每一场都会空跑，什么都不会产出——这是唯一只有你能修的故障。
+**怎么修**：在这台 Mac 的终端里跑一次 \`claude\`，按提示登录，登完系统自动恢复，不用管我。"
+  else
+    notify "🟡 **提醒：你的 Claude 登录将在 ${expires} 过期**（还剩约 ${remain} 小时）
+过期后每 6 小时的每一场都会空跑，直到你重新登录为止（2026-08-18 就这样白丢了三场）。
+**怎么修**：在这台 Mac 的终端里跑一次 \`claude\`，一分钟的事，现在做掉就不会断。"
+  fi
+}
+
 # 取"最后一条已经不可能还在跑的记录"。为什么不能直接 tail -1：
 # 本场自己的 start 行必须跳过。开场注入路径靠调用顺序规避（record_run start 排在 session_alert 之后，
 # 见文件末尾），但 selfcheck 是独立入口——会话中途手工跑时末行恒为本场自己的 start，
@@ -213,6 +251,8 @@ fi
 # 开场记录必须落在 session_alert 之后（上面构造 PROMPT 时已调用），否则它会读到本场自己这一行
 [ "$MODE" != "smoke" ] && record_run 0 "${JOURNAL:-none}" start
 
+[ "$MODE" != "smoke" ] && creds_preflight
+
 START="$(date +%s)"
 claude -p "$PROMPT" --dangerously-skip-permissions >>"$LOG" 2>&1 &
 CLAUDE_PID=$!
@@ -243,6 +283,9 @@ echo "=== 退出码 $RC $(date '+%F %T') ===" >>"$LOG"
 if [ "$RC" -ne 0 ]; then
   if [ "$RC" -eq 142 ]; then
     REASON="超时(${TIMEOUT}s 被强制终止)"
+  elif tail -c 2000 "$LOG" | grep -qiE "OAuth access token has expired|401.*authenticate|Failed to authenticate"; then
+    # 这一类失败的收件人动作是确定的，别让它混在通用 exit=1 里（2026-08-18 三场同因空跑）
+    REASON="**你的 Claude 登录过期了**，本场整场空跑。请在这台 Mac 的终端里跑一次 \`claude\` 重新登录——不登的话之后每 6 小时都会再空跑一场"
   else
     REASON="异常退出(exit=$RC)"
   fi

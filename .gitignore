@@ -3,3 +3,4 @@ system/logs/*.log
 system/.lock*/
 node_modules/
 __pycache__/
+workspace/.creds-warned
