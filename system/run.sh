@@ -122,6 +122,26 @@ last_settled() {
     END { if (keep != "") print keep }' "$RUNLOG"
 }
 
+# 失败连击：从 RUNLOG 尾部往前数，连续多少条收尾记录是非零退出，以及最早那条的时间戳。
+# 为什么需要它：session_alert 原本只看 last_settled 这一条，于是 2026-08-19~20 连续 8 场
+# 全挂时，每一场读到的告警都是"上一场非零退出"——和偶发崩溃一模一样，
+# "两天零产出"这个量级从来没被说出口过（见 LEDGER L-039）。
+fail_streak() {
+  [ -s "$RUNLOG" ] || { echo "0 0"; return; }
+  awk '''
+    /phase=end/ {
+      rc="0"; ts=0
+      if (match($0, /rc=-?[0-9]+/)) rc=substr($0, RSTART+3, RLENGTH-3)
+      if (match($0, / t=[0-9]+/))   ts=substr($0, RSTART+3, RLENGTH-3)+0
+      n++; RC[n]=rc+0; TS[n]=ts
+    }
+    END {
+      k=0; first=0
+      for (i=n; i>=1; i--) { if (RC[i]==0) break; k++; first=TS[i] }
+      print k, first
+    }''' "$RUNLOG"
+}
+
 # 开场自检：上一场是否异常（非零退出 / 活干了没写 journal / 排班缺口）。
 # 有异常则输出一段文字，由调用方注入本场 PROMPT；无异常输出空。
 session_alert() {
@@ -146,6 +166,21 @@ session_alert() {
 
   [ "${rc:-0}" != "0" ] && alerts="${alerts}
 - **上一场非零退出**（rc=${rc}）：先读它的日志尾部（\`${last##*log=}\`）判断是崩在哪一步。"
+
+  # 连击 ≥2 = 不是偶发，是系统在持续停摆；措辞必须和单场崩溃区分开
+  local streak_out streak streak_since streak_h
+  streak_out="$(fail_streak)"; streak="${streak_out%% *}"; streak_since="${streak_out##* }"
+  if [ "${streak:-0}" -ge 2 ]; then
+    streak_h=$(( ( $(date +%s) - ${streak_since:-0} ) / 3600 ))
+    alerts="${alerts}
+- **🔴 连续 ${streak} 场全部非零退出，最早一场在 ${streak_h} 小时前**：这不是偶发崩溃，是系统已经停摆约 ${streak_h} 小时、期间零产出。**不要只看上一场的日志**——把这 ${streak} 场的日志放在一起找共同根因（\`ls -t system/logs/ | head -${streak}\`），并核对这段时间人有没有收到过任何告警。根因与丢场数必须进 LEDGER。"
+  fi
+
+  # 断网期间告警发不出去会落到这个队列（notify.sh）。人当时没看到，本场必须替他看一遍。
+  if [ -s "$ROOT/system/state/undelivered-alerts.md" ]; then
+    alerts="${alerts}
+- **有 $(grep -c '^## ' "$ROOT/system/state/undelivered-alerts.md") 条告警当时发不出去**（\`system/state/undelivered-alerts.md\`）：断网期间人一条都没收到。读一遍，确认里面的事故都已处置。"
+  fi
   [ "${jw:-1}" != "1" ] && alerts="${alerts}
 - **上一场没写 journal**（应写 \`${jrn}\`）：活可能干了一半就崩了，属丢场，必须补记（标明是本场追认）并在 LEDGER 记一条。"
   if [ "${dirty:-0}" != "0" ] && [ "${dirty_now:-0}" != "0" ]; then alerts="${alerts}
