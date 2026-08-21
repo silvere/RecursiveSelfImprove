@@ -59,17 +59,40 @@ def cover_of(files):
     return (imgs[0], files[imgs[0]]) if imgs else None
 
 
+def fetch_ref(ref: str) -> None:
+    """判定前把 ref 拉新。
+
+    2026-08-22 s2 实测到的真 bug：本判定读的是**本地**的 origin/main ref，而配图 CI 刚
+    把题图推上去时本地 ref 还停在 ship 之前的 commit——于是"图明明在远端"被报成
+    "✗ 没有任何题图"，RC=4 拒绝同步。两种完全不同的情况（真没图 / 我的数据过期了）
+    共用了同一个结论，正是 STRATEGY 策略 11 说的：机检信号再强，输入陈旧一样得出假结论。
+    """
+    if not ref.startswith("origin/"):
+        return
+    branch = ref.split("/", 1)[1]
+    r = subprocess.run(["git", "fetch", "origin", branch, "-q"], cwd=AIWRITER,
+                       capture_output=True, text=True)
+    if r.returncode != 0:
+        # 离线时不阻断判定，但必须显式告诉调用者"下面这个结论基于可能过期的数据"
+        print(f"::warning::git fetch origin {branch} 失败（{r.stderr.strip()[:80]}），"
+              f"以下判定基于本地可能过期的 {ref}")
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--dir", help="要判定的 post 目录，如 posts/2026-08-21/xxx")
     ap.add_argument("--audit", action="store_true", help="对全部存量回跑")
     ap.add_argument("--ref", default="origin/main")
+    ap.add_argument("--no-fetch", action="store_true",
+                    help="跳过判定前的 git fetch（仅用于测试陈旧 ref 的行为）")
     ap.add_argument("--window", type=int, default=WINDOW)
     a = ap.parse_args()
     if not a.dir and not a.audit:
         print(__doc__)
         return 2
 
+    if not a.no_fetch:
+        fetch_ref(a.ref)
     t = tree(a.ref)
     posts = sorted(t)  # posts/<date>/<slug> —— 日期在前，字典序即时间序
 
@@ -97,7 +120,8 @@ def main():
         return 2
     c = cover_of(t[target])
     if not c:
-        print(f"✗ {target} 没有任何题图——封面缺失本身就该拒（微信同步会失败）")
+        print(f"✗ {target} 在 {a.ref} 上没有任何题图——封面缺失本身就该拒（微信同步会失败）。"
+              f"若配图 CI 刚成功，先确认 fetch 是否失败（见上方 warning）")
         return 1
     name, sha = c
     idx = posts.index(target)

@@ -27,3 +27,9 @@
 2026-08-21T17:35:46Z vq=pass cmd=ship dir=/tmp/vqtest/art2
 2026-08-21T17:35:46Z gate=bypassed cmd=ship dir=/tmp/vqtest/art2 reason=实测绕过路径
 2026-08-21T17:35:46Z vq=bypassed cmd=ship dir=/tmp/vqtest/art2 reason=实测绕过路径
+2026-08-21T23:36:58Z gate=pass cmd=check dir=/Users/jingweisun/Code/AIWriter2/articles/2026-08-22-unused-inventory
+2026-08-21T23:37:00Z gate=pass cmd=ship dir=/Users/jingweisun/Code/AIWriter2/articles/2026-08-22-unused-inventory
+2026-08-21T23:37:00Z vq=pass cmd=ship dir=/Users/jingweisun/Code/AIWriter2/articles/2026-08-22-unused-inventory
+2026-08-21T23:37:07Z shipped dir=/Users/jingweisun/Code/AIWriter2/articles/2026-08-22-unused-inventory date=2026-08-22 slug=unused-inventory commit=125f297 push=1
+2026-08-21T23:38:54Z cover=fail dir=posts/2026-08-22/unused-inventory
+2026-08-21T23:39:09Z cover=pass dir=posts/2026-08-22/unused-inventory
