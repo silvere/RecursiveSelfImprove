@@ -21,12 +21,13 @@
 #   run_daily.sh ship  <文章目录> [--date D] [--slug S] [--dry-run] [--no-push]
 #                                 [--force-no-trace "理由"]
 #
-# 退出码：0 成功 ｜ 2 用法错 ｜ 3 门禁不通过 ｜ 4 题图重复 ｜ 其它 = 被调用步骤的原始失败码
+# 退出码：0 成功 ｜ 2 用法错 ｜ 3 门禁不通过 ｜ 4 题图重复 ｜ 5 ⑤a 模糊量级词闸门未通过 ｜ 其它 = 被调用步骤的原始失败码
 
 set -euo pipefail
 
 REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 AIWRITER="/Users/jingweisun/Code/AIWriter"
+AIWRITER2="/Users/jingweisun/Code/AIWriter2"
 AUDIT="$REPO/workspace/pipeline-runs.log"
 WT="/tmp/rsi-aiwriter-wt"
 
@@ -97,6 +98,26 @@ ship)
   else
     audit "gate=fail cmd=ship dir=$DIR"
     die "门禁不通过：先补齐七刀三件套（01-brief / 03-arena / 06-review + final），或用 --force-no-trace \"理由\" 显式担责" 3
+  fi
+
+  # ── 第 1b 步：⑤a 模糊量级词闸门（T-027，2026-08-22 s1 接入）─────────────
+  # 为什么在这：⑤a 原定的验收动作是"把机检拦下的处数手写进 06-review.md"，那是一条
+  # 靠会话记得去做的纪律——正是 L-044 刚总结要消除的形态。改为读机检自己落的
+  # 05a-vague-check.log：跑过就有记录，没跑就查得出来，不依赖任何人记得写。
+  # 退出码 5 = 闸门未跑过 / 跑过但草稿仍未改干净。绕过路径与三件套门禁共用同一个
+  # --force-no-trace（不新增第二个概念）。
+  VQ="$AIWRITER2/tools/vague_quantifier_check.py"
+  if [ -n "$BYPASS" ]; then
+    echo "⚠ ⑤a 闸门随门禁一并跳过：$BYPASS"
+    audit "vq=bypassed cmd=ship dir=$DIR reason=$BYPASS"
+  elif [ ! -f "$VQ" ]; then
+    echo "⚠ ⑤a 闸门脚本不存在（$VQ），跳过并留痕——不因工具缺失阻塞出稿"
+    audit "vq=missing cmd=ship dir=$DIR"
+  elif python3 "$VQ" --verify "$DIR"; then
+    audit "vq=pass cmd=ship dir=$DIR"
+  else
+    audit "vq=fail cmd=ship dir=$DIR"
+    die "⑤a 未通过：草稿阶段的模糊量级词机检没跑过、或跑了但仍有命中。处置见上方输出；确要放行用 --force-no-trace \"理由\"" 5
   fi
 
   # ── 第 2 步：转换桥 ────────────────────────────────────────────────────

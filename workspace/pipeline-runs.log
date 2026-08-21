@@ -17,3 +17,13 @@
 2026-08-20T23:37:45Z gate=pass cmd=ship dir=/Users/jingweisun/Code/AIWriter2/articles/2026-08-21-representation-cost
 2026-08-20T23:37:51Z shipped dir=/Users/jingweisun/Code/AIWriter2/articles/2026-08-21-representation-cost date=2026-08-21 slug=representation-cost commit=a329527 push=1
 2026-08-21T05:36:13Z cover=pass dir=posts/2026-08-21/representation-cost
+2026-08-21T17:35:31Z gate=pass cmd=ship dir=/tmp/vqtest/art2
+2026-08-21T17:35:31Z vq=fail cmd=ship dir=/tmp/vqtest/art2
+2026-08-21T17:35:45Z gate=pass cmd=ship dir=/tmp/vqtest/art2
+2026-08-21T17:35:45Z vq=fail cmd=ship dir=/tmp/vqtest/art2
+2026-08-21T17:35:46Z gate=pass cmd=ship dir=/tmp/vqtest/art2
+2026-08-21T17:35:46Z vq=pass cmd=ship dir=/tmp/vqtest/art2
+2026-08-21T17:35:46Z gate=pass cmd=ship dir=/tmp/vqtest/art2
+2026-08-21T17:35:46Z vq=pass cmd=ship dir=/tmp/vqtest/art2
+2026-08-21T17:35:46Z gate=bypassed cmd=ship dir=/tmp/vqtest/art2 reason=实测绕过路径
+2026-08-21T17:35:46Z vq=bypassed cmd=ship dir=/tmp/vqtest/art2 reason=实测绕过路径
