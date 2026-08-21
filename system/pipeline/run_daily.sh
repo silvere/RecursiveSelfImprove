@@ -17,10 +17,11 @@
 # 用法：
 #   run_daily.sh prep  [--date YYYY-MM-DD]                 # 生成当日选题候选
 #   run_daily.sh check <文章目录>                           # 只跑门禁
+#   run_daily.sh cover-check <posts/日期/slug>              # 题图去重（配图 CI 成功后跑）
 #   run_daily.sh ship  <文章目录> [--date D] [--slug S] [--dry-run] [--no-push]
 #                                 [--force-no-trace "理由"]
 #
-# 退出码：0 成功 ｜ 2 用法错 ｜ 3 门禁不通过 ｜ 其它 = 被调用步骤的原始失败码
+# 退出码：0 成功 ｜ 2 用法错 ｜ 3 门禁不通过 ｜ 4 题图重复 ｜ 其它 = 被调用步骤的原始失败码
 
 set -euo pipefail
 
@@ -50,6 +51,20 @@ check)
   else
     audit "gate=fail cmd=check dir=$DIR"
     die "门禁不通过：该文未走完七刀（三件套不全），不予放行" 3
+  fi
+  ;;
+
+# ── 题图去重（T-021 / W-006）────────────────────────────────────────────────
+# 为什么单独一个子命令而不是塞进 ship：题图是 **配图 CI 在 ship 之后**才写进仓库的，
+# ship 阶段那个目录里根本没有图，此时判定必然恒过（正是 STRATEGY 策略 10 要拒收的形态）。
+# 所以它的正确位置是「配图 CI 成功之后、同步草稿箱之前」，判据源是 origin/main 的真实内容。
+cover-check)
+  DIR="${1:-}"; [ -n "$DIR" ] || die "cover-check 需要 posts/<日期>/<slug>" 2
+  if python3 "$REPO/system/pipeline/cover_check.py" --dir "$DIR"; then
+    audit "cover=pass dir=$DIR"
+  else
+    audit "cover=fail dir=$DIR"
+    die "题图与最近 7 篇重复，拒绝同步——换图后重跑配图 CI" 4
   fi
   ;;
 
