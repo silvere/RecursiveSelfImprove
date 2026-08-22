@@ -1,0 +1,23 @@
+#!/bin/bash
+# pre-commit — 本次 commit 新增的 LEDGER 条目必须拿得出 L1–L3 级证据（STRATEGY 策略 11 / L-047）
+#
+# 为什么挂在 commit 上：策略 11 落地当天，它自己的执行方式是"下一场会话拿眼睛扫一遍"，
+# 这正是 L-046 判死的形态（验收动作靠记性）。新条目唯一必经的那道门是 git commit，
+# 挂在这里才不需要任何人记得跑（也不会重蹈 T-028 的覆辙：判定跑了、结论到不了它该拦的门）。
+#
+# 基线自动取 HEAD 版本的最大编号，所以它**只看本次新增的条目**，存量一律不追溯。
+# 逃生：`git commit --no-verify`（git 原生开关，不新增第二个概念）。
+ROOT="$(git rev-parse --show-toplevel)"
+[ -f "$ROOT/system/pipeline/evidence_grade.py" ] || exit 0
+git diff --cached --name-only | grep -qx 'LEDGER.md' || exit 0   # 本次没动 LEDGER 就不检查
+
+OUT=$(python3 "$ROOT/system/pipeline/evidence_grade.py" --gate --new --list-bare 2>&1)
+RC=$?
+if [ $RC -ne 0 ]; then
+  echo "$OUT" >&2
+  echo "" >&2
+  echo "→ 策略 11：新增条目的'完成/通过/达标'类结论必须至少有一条 L1–L3 证据" >&2
+  echo "  L1 命令输出/退出码/文件路径 ｜ L2 CI run 号/media_id/commit ｜ L3 跨场复核结论" >&2
+  echo "  拿不出证据就把结论改写成「未验证」；确需绕过：git commit --no-verify" >&2
+fi
+exit $RC
